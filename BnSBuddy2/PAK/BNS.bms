@@ -1,0 +1,341 @@
+# Unreal Engine 4 - Unreal Tournament 4 (*WindowsNoEditor.pak) (script 0.4.25b)
+# script for QuickBMS http://quickbms.aluigi.org
+
+math NO_TAIL_INFO = 0   # set it to 1 for archives with corrupt/missing tail information
+
+quickbmsver "0.8.4"
+
+math TOC_FILE = 0
+
+# set your AES_KEY here as text or C string ("\x11\x22...") or umodel hex (0x1122...)
+set AES_KEY binary ""
+putarray 10 -1 ""
+math AES_KEY_IS_SET = 0
+
+math ALTERNATIVE_MODE = 0
+math BASE_PATH_INCLUDED = 1
+
+get ARCHIVE_NAME basename
+get ARCHIVE_PATH FILEPATH
+
+math VERSION = 0
+
+math CHUNK_OFFSET_ABSOLUTE = -1 # default, enabled
+
+# 1 = HIT
+math WORKAROUND = 0
+
+if NO_TAIL_INFO != 0
+    get OFFSET asize
+    math ALTERNATIVE_MODE = 1
+else
+    goto -0xcd # for version 9
+	savepos MAGIC_OFF
+	get MAGIC long  #idstring "\xe1\x12\x6f\x5a" # 0x5a6f12e1
+	math WORKAROUND = 5
+	
+	if MAGIC != 0x5a6f12e1
+		goto -0xac # for version 8 (4.22)
+		savepos MAGIC_OFF
+		get MAGIC long
+		math WORKAROUND = 4
+	endif
+	
+	if MAGIC != 0x5a6f12e1
+        goto -0xcc  # version 8 (4.23-4.24)
+        savepos MAGIC_OFF
+        get MAGIC long
+        math WORKAROUND = 3
+    endif
+	
+	if MAGIC != 0x5a6f12e1
+		goto -0x2c # previous versions 3-7
+		savepos MAGIC_OFF
+		get MAGIC long
+		math WORKAROUND = 0
+	endif
+
+    endian guess MAGIC      # 0x5a6f12e1:le, 0xe1126f5a:be
+    if MAGIC == 0x1233a     # HIT game
+        math WORKAROUND = 1
+    elif MAGIC == 0x1066a   # OverHit
+        math WORKAROUND = 1
+    elif MAGIC == 0x13aed   # OverHit
+        math WORKAROUND = 1
+    elif ARCHIVE_NAME & "OverHit"
+        math WORKAROUND = 1
+    elif ARCHIVE_NAME == "0"    # HIT
+        math WORKAROUND = 1
+    elif ARCHIVE_PATH & "Gears of War 4"
+        math WORKAROUND = 2
+    endif
+    get VERSION long
+    endian guess VERSION
+    get OFFSET longlong
+    get SIZE longlong
+    getdstring HASH 20	
+	
+	get FSIZE asize
+	savepos CUR_POS
+	if CUR_POS = FSIZE
+		string COMP1 = ""
+	else
+		get CHECK byte
+		if CHECK > 1
+			goto -1 0 SEEK_CUR
+		endif
+		getdstring COMP1 32
+		getdstring COMP2 32
+		string COMP1 l COMP1
+		string COMP2 l COMP2
+	endif
+	
+    if WORKAROUND == 1
+        math VERSION = 3
+    endif
+
+    if VERSION >= 3
+        goto MAGIC_OFF
+        goto -1 0 SEEK_CUR
+        get ENCRYPTED byte
+        if ENCRYPTED != 0
+            callfunction SET_AES_KEY 1
+            log MEMORY_FILE10 OFFSET SIZE
+            encryption "" ""
+            math TOC_FILE = -10 # MEMORY_FILE10 is -10
+        endif
+    endif
+
+    goto OFFSET # don't use TOC_FILE
+    callfunction GET_BASE_PATH 1
+endif
+
+if ALTERNATIVE_MODE == 0
+    get FILES long TOC_FILE
+else
+    math FILES = 0x7fffffff
+    math MAX_OFF = OFFSET
+    goto 0
+    set NAME string ""
+endif
+
+math CHUNK_SIZE = 0x10000   # just in case...
+for i = 0 < FILES
+    if ALTERNATIVE_MODE == 0
+        callfunction GET_NAME 1
+    endif
+    savepos TMP_OFF TOC_FILE
+
+    get OFFSET longlong TOC_FILE
+    if WORKAROUND == 2
+        get ZSIZE long TOC_FILE
+        get SIZE long TOC_FILE
+        get ZIP byte TOC_FILE
+	elif WORKAROUND == 4
+		get ZSIZE longlong TOC_FILE
+        get SIZE longlong TOC_FILE
+		get ZIP byte TOC_FILE
+    else
+        get ZSIZE longlong TOC_FILE
+        get SIZE longlong TOC_FILE
+        get ZIP long TOC_FILE
+    endif
+    if WORKAROUND == 1
+        getdstring HASH 20 TOC_FILE
+    elif VERSION <= 1
+        get TSTAMP longlong TOC_FILE
+    endif
+    if WORKAROUND == 2
+    else
+        getdstring HASH 20 TOC_FILE
+    endif
+	
+    math CHUNKS = 0
+    math ENCRYPTED = 0
+    if VERSION >= 3
+        if ZIP != 0
+            get CHUNKS long TOC_FILE
+            for x = 0 < CHUNKS
+                get CHUNK_OFFSET longlong TOC_FILE
+                get CHUNK_END_OFFSET longlong TOC_FILE
+                putarray 0 x CHUNK_OFFSET
+                putarray 1 x CHUNK_END_OFFSET
+            next x
+        endif
+        if WORKAROUND == 2
+        else
+            get ENCRYPTED byte TOC_FILE
+        endif
+        get CHUNK_SIZE long TOC_FILE
+    endif
+    if WORKAROUND == 1
+        if ARCHIVE_NAME == "0"  # HIT game only!
+            math ENCRYPTED = 0
+        endif
+    endif
+    if ALTERNATIVE_MODE != 0
+        savepos TMP_OFF TOC_FILE
+        math OFFSET + TMP_OFF
+    endif
+
+    #comtype copy
+	callfunction COMPRESSION_TYPE 1
+
+    if CHUNKS > 0
+        log NAME 0 0
+        append
+        math TMP_SIZE = SIZE
+		if CHUNK_OFFSET_ABSOLUTE < 0 && OFFSET != 0
+			getarray CHUNK_OFFSET 0 0
+			if CHUNK_OFFSET u< OFFSET || VERSION >= 5
+				math CHUNK_OFFSET_ABSOLUTE = 0
+			else
+				math CHUNK_OFFSET_ABSOLUTE = 1
+			endif
+		endif
+        for x = 0 < CHUNKS
+            getarray CHUNK_OFFSET 0 x
+            getarray CHUNK_END_OFFSET 1 x
+            math CHUNK_ZSIZE = CHUNK_END_OFFSET
+            math CHUNK_ZSIZE - CHUNK_OFFSET
+            math CHUNK_XSIZE = CHUNK_ZSIZE
+            if ENCRYPTED != 0
+                callfunction SET_AES_KEY 1
+                math CHUNK_XSIZE x 16
+            endif
+            if TMP_SIZE u< CHUNK_SIZE
+                math CHUNK_SIZE = TMP_SIZE
+            endif
+            if CHUNK_OFFSET_ABSOLUTE == 0
+                math CHUNK_OFFSET + OFFSET
+            endif
+            if ZIP == 0
+                log NAME CHUNK_OFFSET CHUNK_SIZE 0 CHUNK_XSIZE
+            else
+                clog NAME CHUNK_OFFSET CHUNK_ZSIZE CHUNK_SIZE 0 CHUNK_XSIZE
+            endif
+            math TMP_SIZE - CHUNK_SIZE
+        next x
+        append
+    else
+        # the file offset points to an entry containing
+        # the "same" OFFSET ZSIZE SIZE ZIP HASH ZERO fields,
+        # just an additional backup... so let's skip them
+        savepos BASE_OFF TOC_FILE
+        math BASE_OFF - TMP_OFF
+        math OFFSET + BASE_OFF
+        math XSIZE = ZSIZE
+        if ENCRYPTED != 0
+            callfunction SET_AES_KEY 1
+            math XSIZE x 16
+        endif
+        if ZIP == 0
+            log NAME OFFSET SIZE 0 XSIZE
+        else
+            clog NAME OFFSET ZSIZE SIZE 0 XSIZE
+        endif
+    endif
+    encryption "" ""
+
+    if ALTERNATIVE_MODE != 0
+        math OFFSET + ZSIZE
+        goto OFFSET
+        if OFFSET == MAX_OFF
+            break
+        endif
+        if VERSION >= 4
+            padding 0x800   # necessary for WitchIt
+        endif
+    endif
+next i
+
+startfunction SET_AES_KEY_ASK
+    math AES_KEY_IS_SET = 1
+    print "The archive is encrypted, select the number of the key to use or type yours:"
+    
+    string AES_KEY h "D2E5F7F94E625EFE2726B5360C1039CE7CB9ABB760A94F37BB15A6DC08741656"
+
+    print "KEY: %AES_KEY%"
+endfunction
+
+startfunction SET_AES_KEY
+    if AES_KEY_IS_SET == 0
+        callfunction SET_AES_KEY_ASK 1
+    endif
+    if AES_KEY_IS_SET > 0
+        encryption aes AES_KEY "" 0 32
+    endif
+endfunction
+
+startfunction GET_NAME
+    get NAMESZ signed_long TOC_FILE
+    if NAMESZ >= 0
+        if NAMESZ > 0x200
+            math ALTERNATIVE_MODE = 1
+		else
+			getdstring NAME NAMESZ TOC_FILE
+        endif
+    else
+        math NAMESZ n NAMESZ
+        if NAMESZ > 0x200
+            math ALTERNATIVE_MODE = 1
+        else
+            math NAMESZ * 2
+            getdstring NAME NAMESZ TOC_FILE
+            set NAME unicode NAME
+        endif
+    endif
+	if BASE_PATH_INCLUDED == 0
+		set TMP_NAME string ""
+		string TMP_NAME + BASE_PATH
+		string TMP_NAME + NAME
+		string NAME = TMP_NAME
+	endif
+
+endfunction
+
+startfunction GET_BASE_PATH
+    get NAMESZ signed_long TOC_FILE
+    if NAMESZ > 0x200
+        math ALTERNATIVE_MODE = 1
+	else 
+		getdstring BASE_PATH NAMESZ TOC_FILE
+    endif
+	if NAMESZ != 0x0A && NAMESZ < 0xFF
+		string BASE_PATH | "../../../"
+		math BASE_PATH_INCLUDED = 0
+	endif
+endfunction
+
+startfunction COMPRESSION_TYPE
+	if COMP1 = ""
+		comtype lz4
+	endif
+	
+	if ZIP = 1 && COMP1 = "zlib"
+		comtype zlib
+	elif ZIP = 1 && COMP1 = "zstd"
+		comtype zstd
+	elif ZIP = 1 && COMP1 = "oodle"
+		comtype oodle
+	elif ZIP = 1 && COMP1 = "lz4"
+		comtype lz4
+	elif ZIP = 1 && COMP1 = "gzip"
+		comtype gzip
+	elif ZIP = 2 && COMP2 = "zlib"
+		comtype zlib
+	elif ZIP = 2 && COMP2 = "zstd"
+		comtype zstd
+	elif ZIP = 2 && COMP2 = "oodle"
+		comtype oodle
+	elif ZIP = 2 && COMP2 = "lz4"
+		comtype lz4
+	elif ZIP = 2 && COMP2 = "gzip"
+		comtype gzip
+	elif ZIP = 4 || ZIP = 0x10 || ZIP = 3 # 3 - Faith of Danschant, 4 - Days Gone, 10 - ?
+		comtype oodle
+		if WORKAROUND == 2
+			comtype lz4
+		endif
+	endif
+endfunction
