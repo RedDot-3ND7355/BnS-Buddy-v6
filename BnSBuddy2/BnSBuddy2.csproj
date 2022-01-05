@@ -1,0 +1,538 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{83198AC2-E4ED-4883-9968-1AD992AC01D8}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>BnSBuddy2</RootNamespace>
+    <AssemblyName>BnS Buddy</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>9.0</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>9.0</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Buddy.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestTimestampUrl>http://timestamp.verisign.com/scripts/timstamp.dll</ManifestTimestampUrl>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>341C5692CB780377C82154AB75FDD99EF1C4813F</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>BnSBuddy2.Program</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BigInteger">
+      <HintPath>..\..\..\..\Documents\Visual Studio 2017\Projects\5.9 Source\Resources\BigInteger.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BouncyCastle.Crypto, Version=1.9.0.0, Culture=neutral, PublicKeyToken=0e99375e54769942, processorArchitecture=MSIL">
+      <HintPath>..\packages\Portable.BouncyCastle.1.9.0\lib\net40\BouncyCastle.Crypto.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="DnsClient, Version=1.5.0.0, Culture=neutral, PublicKeyToken=4574bb5573c51424, processorArchitecture=MSIL">
+      <HintPath>..\packages\DnsClient.1.5.0\lib\net471\DnsClient.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="DotNetZip, Version=1.16.0.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
+      <HintPath>..\packages\DotNetZip.1.16.0\lib\net40\DotNetZip.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="FastColoredTextBox, Version=2.16.26.100, Culture=neutral, PublicKeyToken=fb8aa12b994ef61b, processorArchitecture=MSIL">
+      <HintPath>..\packages\Sara-FCTB.2.16.26.105\lib\net35\FastColoredTextBox.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="MaterialSkin, Version=2.3.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MaterialSkin.2.2.3.1\lib\net461\MaterialSkin.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="MegaApiClient">
+      <HintPath>Resources\MegaApiClient.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.HashCode, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.HashCode.1.1.1\lib\net461\Microsoft.Bcl.HashCode.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="Microsoft.Win32.Registry, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Win32.Registry.5.0.0\lib\net461\Microsoft.Win32.Registry.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.CodeDom, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.CodeDom.6.0.0\lib\net461\System.CodeDom.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Formats.Asn1, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Formats.Asn1.6.0.0\lib\net461\System.Formats.Asn1.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.Compression">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Management" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.AccessControl, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.AccessControl.6.0.0\lib\net461\System.Security.AccessControl.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.Principal.Windows, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Principal.Windows.5.0.0\lib\net461\System.Security.Principal.Windows.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationTypes" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AddonParser\LegacyAddons.cs" />
+    <Compile Include="AddonParser\XmlAddons.cs" />
+    <Compile Include="BuddyUpdater\UpdateHandler.cs" />
+    <Compile Include="ClassToggles\ButtonsHandler.cs" />
+    <Compile Include="ClassToggles\Startup.cs" />
+    <Compile Include="ClassToggles\ToggleAction.cs" />
+    <Compile Include="ClassToggles\TogglesHandler.cs" />
+    <Compile Include="ClassToggles\UpkNumbs.cs" />
+    <Compile Include="CoreHandlers\Addons.cs" />
+    <Compile Include="CoreHandlers\Game.cs" />
+    <Compile Include="CoreHandlers\Mods.cs" />
+    <Compile Include="CoreHandlers\Pak.cs" />
+    <Compile Include="CoreHandlers\Splash.cs" />
+    <Compile Include="EmbeddedAssembly.cs" />
+    <Compile Include="Form1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form1.Designer.cs">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Functions\BNSXorEncryption.cs" />
+    <Compile Include="Functions\CheckMD5.cs" />
+    <Compile Include="Functions\Cleaner.cs" />
+    <Compile Include="Functions\DelayedTasks.cs" />
+    <Compile Include="Functions\ExtractRessources.cs" />
+    <Compile Include="Functions\FasterToggle.cs" />
+    <Compile Include="Functions\FirstTimeUse.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Functions\FirstTimeUse.Designer.cs">
+      <DependentUpon>FirstTimeUse.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Functions\FTH.cs" />
+    <Compile Include="Functions\GetAffinityClass.cs" />
+    <Compile Include="Functions\GetProcessInfo.cs" />
+    <Compile Include="Functions\KillApp.cs" />
+    <Compile Include="Functions\LiveCheck.cs" />
+    <Compile Include="Functions\MemoryCleaner.cs" />
+    <Compile Include="Functions\MultipleInstallation.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Functions\MultipleInstallation.Designer.cs">
+      <DependentUpon>MultipleInstallation.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Functions\MultipleLang.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Functions\MultipleLang.Designer.cs">
+      <DependentUpon>MultipleLang.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Functions\OnlineCount.cs" />
+    <Compile Include="Functions\OSCheck.cs" />
+    <Compile Include="Functions\Popup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Functions\Popup.Designer.cs">
+      <DependentUpon>Popup.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Functions\Prompt.cs" />
+    <Compile Include="Functions\RAMcs.cs" />
+    <Compile Include="Functions\region.cs" />
+    <Compile Include="Functions\RegionConvert.cs" />
+    <Compile Include="Functions\RunDelay.cs" />
+    <Compile Include="Functions\ULPS.cs" />
+    <Compile Include="GameUpdater\ActionsHandler.cs" />
+    <Compile Include="Licensing\Handler.cs" />
+    <Compile Include="Licensing\IniLicense.cs" />
+    <Compile Include="Licensing\LicenseUI.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Licensing\LicenseUI.Designer.cs">
+      <DependentUpon>LicenseUI.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Loading.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Loading.Designer.cs">
+      <DependentUpon>Loading.cs</DependentUpon>
+    </Compile>
+    <Compile Include="msghandler\Homepage.cs" />
+    <Compile Include="msghandler\Inbox.cs" />
+    <Compile Include="NCServer\ServerValues.cs" />
+    <Compile Include="Packets\NCHandler.cs" />
+    <Compile Include="Packets\Pinger.cs" />
+    <Compile Include="Pages\AddonCreator.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\AddonCreator.Designer.cs">
+      <DependentUpon>AddonCreator.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Affinity.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Affinity.Designer.cs">
+      <DependentUpon>Affinity.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\enterCode.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\enterCode.Designer.cs">
+      <DependentUpon>enterCode.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Login.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Login.Designer.cs">
+      <DependentUpon>Login.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Plugins.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Plugins.Designer.cs">
+      <DependentUpon>Plugins.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Profiles.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Profiles.Designer.cs">
+      <DependentUpon>Profiles.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Sessions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Sessions.Designer.cs">
+      <DependentUpon>Sessions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\UpdateTransition.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\UpdateTransition.Designer.cs">
+      <DependentUpon>UpdateTransition.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PAK\PakHandler.cs" />
+    <Compile Include="Pathing\AddonsPaths.cs" />
+    <Compile Include="Pathing\ClientPaths.cs" />
+    <Compile Include="Pathing\ExecuteableFile.cs" />
+    <Compile Include="Pathing\LauncherPaths.cs" />
+    <Compile Include="Pathing\PakPaths.cs" />
+    <Compile Include="Pathing\RedoPathing.cs" />
+    <Compile Include="Pathing\SplashPaths.cs" />
+    <Compile Include="Pilao\AESKeyObject.cs" />
+    <Compile Include="Pilao\BCRYPT_RSAKEY_BLOB.cs" />
+    <Compile Include="Pilao\bnscompression.cs" />
+    <Compile Include="Pilao\ComboBoxHandler.cs" />
+    <Compile Include="Pilao\configurator.cs" />
+    <Compile Include="Pilao\DatFilesMan.cs" />
+    <Compile Include="Pilao\DatHandler.cs" />
+    <Compile Include="Pilao\FastColoredHandler.cs" />
+    <Compile Include="Pilao\KeyBlobMagicNumber.cs" />
+    <Compile Include="Pilao\RSAKeyObject.cs" />
+    <Compile Include="Pilao\TreeViewHandler.cs" />
+    <Compile Include="PluginLoader\AddonHandler.cs" />
+    <Compile Include="PluginLoader\FileTable.cs" />
+    <Compile Include="PluginLoader\PLAddonManager.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PluginLoader\PLAddonManager.Designer.cs">
+      <DependentUpon>PLAddonManager.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PluginLoader\PLGui.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PluginLoader\PLGui.Designer.cs">
+      <DependentUpon>PLGui.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PluginLoader\PluginHandler.cs" />
+    <Compile Include="Preload.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Preload.Designer.cs">
+      <DependentUpon>Preload.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProfileManager\ActiveSessions.cs" />
+    <Compile Include="ProfileManager\AddGui.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProfileManager\AddGui.Designer.cs">
+      <DependentUpon>AddGui.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProfileManager\ConfirmDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProfileManager\ConfirmDialog.Designer.cs">
+      <DependentUpon>ConfirmDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProfileManager\ConfirmKillAll.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProfileManager\ConfirmKillAll.Designer.cs">
+      <DependentUpon>ConfirmKillAll.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProfileManager\ConfirmReset.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProfileManager\ConfirmReset.Designer.cs">
+      <DependentUpon>ConfirmReset.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProfileManager\functions.cs" />
+    <Compile Include="ProfileManager\ManageSessions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProfileManager\ManageSessions.Designer.cs">
+      <DependentUpon>ManageSessions.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProfileManager\NewSession.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProfileManager\NewSession.Designer.cs">
+      <DependentUpon>NewSession.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ProfileManager\ProfileHandler.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Security\FingerPrint.cs" />
+    <Compile Include="Settings\ConfigParser.cs" />
+    <Compile Include="Settings\Default.cs" />
+    <Compile Include="Settings\Routine.cs" />
+    <Compile Include="Settings\SetValues.cs" />
+    <Compile Include="Settings\Themeing.cs" />
+    <Compile Include="Startup\Validate.cs" />
+    <Compile Include="WMI_Processor_Information.cs" />
+    <EmbeddedResource Include="Form1.en-AI.resx">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form1.resx">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Functions\FirstTimeUse.resx">
+      <DependentUpon>FirstTimeUse.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Functions\MultipleInstallation.resx">
+      <DependentUpon>MultipleInstallation.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Functions\MultipleLang.resx">
+      <DependentUpon>MultipleLang.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Functions\Popup.resx">
+      <DependentUpon>Popup.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Licensing\LicenseUI.resx">
+      <DependentUpon>LicenseUI.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Loading.resx">
+      <DependentUpon>Loading.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\AddonCreator.resx">
+      <DependentUpon>AddonCreator.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\Affinity.resx">
+      <DependentUpon>Affinity.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\enterCode.resx">
+      <DependentUpon>enterCode.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\Login.resx">
+      <DependentUpon>Login.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\Plugins.resx">
+      <DependentUpon>Plugins.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\Profiles.resx">
+      <DependentUpon>Profiles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\Sessions.resx">
+      <DependentUpon>Sessions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Pages\UpdateTransition.resx">
+      <DependentUpon>UpdateTransition.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PluginLoader\PLAddonManager.resx">
+      <DependentUpon>PLAddonManager.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PluginLoader\PLGui.resx">
+      <DependentUpon>PLGui.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Preload.resx">
+      <DependentUpon>Preload.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ProfileManager\AddGui.resx">
+      <DependentUpon>AddGui.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ProfileManager\ConfirmDialog.resx">
+      <DependentUpon>ConfirmDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ProfileManager\ConfirmKillAll.resx">
+      <DependentUpon>ConfirmKillAll.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ProfileManager\ConfirmReset.resx">
+      <DependentUpon>ConfirmReset.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ProfileManager\ManageSessions.resx">
+      <DependentUpon>ManageSessions.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ProfileManager\NewSession.resx">
+      <DependentUpon>NewSession.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="packages.config" />
+    <None Include="PAK\UnrealPak.zip" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <None Include="Resources\ad2.zip" />
+    <EmbeddedResource Include="Resources\BigInteger.zip" />
+    <EmbeddedResource Include="Resources\bnscompression.zip" />
+    <EmbeddedResource Include="Resources\BouncyCastle.Crypto.zip" />
+    <None Include="Resources\BuddySplash-Big.zip" />
+    <None Include="Resources\BuddySplash-Small.zip" />
+    <EmbeddedResource Include="Resources\DnsClient.zip" />
+    <EmbeddedResource Include="Resources\FastColoredTextBox.zip" />
+    <EmbeddedResource Include="Resources\MaterialSkin.zip" />
+    <EmbeddedResource Include="Resources\MegaApiClient.zip" />
+    <EmbeddedResource Include="Resources\Microsoft.Bcl.HashCode.zip" />
+    <EmbeddedResource Include="Resources\Microsoft.Win32.Registry.zip" />
+    <EmbeddedResource Include="Resources\Newtonsoft.Json.zip" />
+    <EmbeddedResource Include="Resources\DotNetZip.zip" />
+    <EmbeddedResource Include="Resources\System.Buffers.zip" />
+    <EmbeddedResource Include="Resources\System.CodeDom.zip" />
+    <EmbeddedResource Include="Resources\System.Formats.Asn1.zip" />
+    <EmbeddedResource Include="Resources\System.Memory.zip" />
+    <EmbeddedResource Include="Resources\System.Numerics.Vectors.zip" />
+    <EmbeddedResource Include="Resources\System.Runtime.CompilerServices.Unsafe.zip" />
+    <EmbeddedResource Include="Resources\System.Security.AccessControl.zip" />
+    <EmbeddedResource Include="Resources\System.Security.Principal.Windows.zip" />
+    <EmbeddedResource Include="Resources\System.ValueTuple.zip" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Prompts\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Disclaimer.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BnSBuddyUpdater2.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Buddy.ico" />
+    <EmbeddedResource Include="Resources\BouncyCastle.Crypto.dll" />
+    <Content Include="Resources\DotNetZip.dll" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent></PostBuildEvent>
+  </PropertyGroup>
+</Project>
