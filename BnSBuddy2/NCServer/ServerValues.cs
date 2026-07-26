@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using DnsClient;
 
 namespace BnSBuddy2.NCServer
 {
@@ -56,30 +57,47 @@ namespace BnSBuddy2.NCServer
             List<string> returnedValues = new List<string>();
             if (Service == "Version")
             {
-                if (Server == "Korean")
+                if (Server.Contains("Korean"))
                 {
                     returnedValues.Add("up4svr.ncupdate.com"); // was up4svr.plaync.co.kr
                     if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
-                        returnedValues.Add("BNS_LIVE"); /* launcher version check: ncLauncherS */
+                        returnedValues.Add("BNS_LIVE");
                     else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Test")
                         returnedValues.Add("BNS_TEST");
+                    else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                        returnedValues.Add("BNSNEO_LIVE");
                 }
                 else if (Server == "NA/EU")
                 {
                     returnedValues.Add("updater.nclauncher.ncsoft.com");
-                    returnedValues.Add("BnS_UE4");
+                    if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
+                        returnedValues.Add("BnS_UE4"); // Live
+                    else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                        returnedValues.Add("BNSNEO"); // Neo
                 }
                 else if (Server == "Taiwan")
                 {
                     returnedValues.Add("up4svr.plaync.com.tw");
-                    returnedValues.Add("TWBNSUE4"); /* launcher version check: ncLauncherS */
+                    if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
+                        returnedValues.Add("TWBNSUE4"); // Live
+                    else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                        returnedValues.Add("TWBNSNEO"); // Neo
+                    /* launcher version check: ncLauncherS */
                 }
                 else if (Server == "Japanese")
                 {
-                    returnedValues.Add("BnSUpdate.ncsoft.jp");
-                    returnedValues.Add("BNS_JPN_UE4");
+                    if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
+                    {
+                        returnedValues.Add("v3-ncjapan-update.ncsoft.jp"); // was bnsupdate.ncsoft.jp
+                        returnedValues.Add("BNS_JPN_UE4");
+                    }
+                    else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                    {
+                        returnedValues.Add("ncj-gameupdate.ncsoft.jp"); // was bnsupdate.ncsoft.jp
+                        returnedValues.Add("BNS_NEO_JP");
+                    }
                 }
-                else
+                else // Default to NA/EU Live server
                 {
                     returnedValues.Add("updater.nclauncher.ncsoft.com");
                     returnedValues.Add("BnS_UE4");
@@ -88,33 +106,55 @@ namespace BnSBuddy2.NCServer
             }
             else if (Service == "Login")
             {
-                if (Server == "Korean")
+                if (Server.Contains("Korean"))
                 {
-                    returnedValues.Add("up4svr.ncupdate.com");
+                    returnedValues.Add("up4svr.ncupdate.com"); // was up4svr.plaync.co.kr
+                    // Null Check
+                    if (Form1.CurrentForm.materialComboBox4.SelectedItem == null && Form1.CurrentForm.materialComboBox4.Items.Count > 0)
+                        Form1.CurrentForm.materialComboBox4.SelectedIndex = 0;
                     if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
-                        returnedValues.Add("NCLauncherW"); /* launcher version check: ncLauncherS */
-                    else
-                        returnedValues.Add("NCLauncherW");
+                        returnedValues.Add("BNS_LIVE");
+                    else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Test")
+                        returnedValues.Add("BNS_TEST");
+                    else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                        returnedValues.Add("BNSNEO_LIVE");
                 }
                 else if (Server == "NA/EU")
                 {
                     returnedValues.Add("updater.nclauncher.ncsoft.com");
-                    returnedValues.Add("BnS_UE4");
+                    // Null Check
+                    if (Form1.CurrentForm.materialComboBox4.SelectedItem == null && Form1.CurrentForm.materialComboBox4.Items.Count > 0)
+                        Form1.CurrentForm.materialComboBox4.SelectedIndex = 0;
+                    if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
+                        returnedValues.Add("BnS_UE4"); // Live
+                    else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                        returnedValues.Add("BNSNEO"); // Neo
                 }
                 else if (Server == "Taiwan")
                 {
                     returnedValues.Add("up4svr.plaync.com.tw");
-                    returnedValues.Add("ncLauncherS"); /* launcher version check: ncLauncherS */
+                    if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
+                        returnedValues.Add("TWBNSUE4"); // Live
+                    else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                        returnedValues.Add("TWBNSNEO"); // Neo
                 }
                 else if (Server == "Japanese")
                 {
-                    returnedValues.Add("BnSUpdate.ncsoft.jp");
-                    returnedValues.Add("ncLauncher");
+                    if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
+                    {
+                        returnedValues.Add("v3-ncjapan-update.ncsoft.jp"); // was bnsupdate.ncsoft.jp
+                        returnedValues.Add("BNS_JPN_UE4");
+                    }
+                    else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                    {
+                        returnedValues.Add("ncj-gameupdate.ncsoft.jp"); // was bnsupdate.ncsoft.jp
+                        returnedValues.Add("BNS_NEO_JP");
+                    }
                 }
-                else
+                else // Default to NA/EU
                 {
                     returnedValues.Add("updater.nclauncher.ncsoft.com");
-                    returnedValues.Add("ncLauncherS");
+                    returnedValues.Add("BnS_UE4");
                 }
                 return returnedValues;
             }

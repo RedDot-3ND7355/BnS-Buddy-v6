@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32.SafeHandles;
-using Revamped_BnS_Buddy.Functions;
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +8,8 @@ using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Revamped_BnS_Buddy.LegacyBin
+
+namespace BnSBuddy2.LegacyBin
 {
     public class BDat : IDisposable
     {
@@ -53,386 +53,234 @@ namespace Revamped_BnS_Buddy.LegacyBin
         public bool bIntData = false;
         public static int CurrentFile = 1;
 
-        public List<string> GetFileList(byte[] InputBin, bool Integer, bool is64)
+        private void WriteString(BinaryWriter writer, string text)
         {
-            List<string> FileList = new List<string>();
-            MemoryStream byteBuff = new MemoryStream(InputBin);
-            bIntData = Integer;
-            Load(byteBuff, BDAT_TYPE.BDAT_BINARY, is64, true);
-            for (int l = 0; l < _content.ListCount; l++)
+            if (string.IsNullOrEmpty(text))
             {
-                Form1.CurrentForm.SortOutputHandler(string.Format("Reading: {0}/{1}", (l + 1), _content.ListCount));
-                //BDAT_LIST blist = _content.Lists[l];
-                FileList.Add($"datafile_{_content.Lists[l].ID:000}.xml");
+                writer.Write((byte)0); // Empty string
+                return;
             }
-            Form1.CurrentForm.SortOutputHandler("Reading: done");
-            byteBuff.Close();
-            return FileList;
+            byte[] bytes = Encoding.UTF8.GetBytes(text);
+            if (bytes.Length > 255) throw new Exception("String too long for 1-byte length");
+            writer.Write((byte)bytes.Length);
+            writer.Write(bytes);
         }
 
-        public Dictionary<string, byte[]> GetFileListAndContent(byte[] InputBin, bool Integer, bool is64)
+        /// <summary>
+        /// Buddy-specific: detect FAQ / common / command table indices on the shared BinHandler content.
+        /// </summary>
+        public void DetectIndices()
         {
-            MemoryStream byteBuff = new MemoryStream(InputBin);
-            bIntData = Integer;
-            Load(byteBuff, BDAT_TYPE.BDAT_BINARY, is64);
-            Dictionary<string, byte[]> FileAndContent = new Dictionary<string, byte[]>();
-            for (int l = 0; l < _content.ListCount; l++)
+            _indexFaqs = -1;
+            _indexCommons = -1;
+            _indexCommands = -1;
+            for (int i = 0; i < BinHandler._content.ListCount; i++)
             {
-                try
+                BDAT_LIST bDAT_LIST = BinHandler._content.Lists[i];
+                if (bDAT_LIST.Unknown1 == 2 && bDAT_LIST.Unknown2 == 0)
                 {
-                    Form1.CurrentForm.SortOutputHandler(string.Format("Reading: {0}/{1}", (l + 1), _content.ListCount));
-                    BDAT_LIST blist = _content.Lists[l];
-                    BXML_LIST list = new BXML_LIST();
-                    list.Convert(blist, bIntData);
-                    XmlWriterSettings setting = new XmlWriterSettings
+                    int num = 0;
+                    if (bDAT_LIST.Collection.Archive != null && bDAT_LIST.Collection.Archive.SubArchiveCount > 0 && bDAT_LIST.Collection.Archive.SubArchives[0].FieldLookupCount > 0)
                     {
-                        Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
-                        Indent = true,
-                        NewLineHandling = NewLineHandling.Entitize
-                    };
-                    MemoryStream ms = new MemoryStream();
-                    XmlWriter writer = XmlWriter.Create(ms, setting);
-                    XmlSerializer xmlSerializer = new XmlSerializer(typeof(BXML_LIST));
-                    xmlSerializer.Serialize(writer, list);
-                    //string OutputXmlString = Encoding.UTF8.GetString(ms.ToArray());
-                    string fileName = $"datafile_{blist.ID:000}.xml";
-                    FileAndContent.Add(fileName, ms.ToArray());
-                    //File.WriteAllText(dir + "/" + fileName, OutputXmlString, Encoding.UTF8);
-                }
-                catch (Exception e)
-                {
-                    if (e.InnerException != null)
-                    {
-                        string err = e.InnerException.Message;
-                        Prompt.Popup(err);
+                        num = bDAT_LIST.Collection.Archive.SubArchives[0].Fields[0].Size;
                     }
-                    Prompt.Popup("XMLSERIALIZER: " + e.Message);
-                }
-            }
-            byteBuff.Close();
-            return FileAndContent;
-        }
-
-        public void PackFromDictionary(Dictionary<string, byte[]> FileAndContent)
-        {
-            for (int i = 0; i < this._content.ListCount; i++)
-            {
-                Form1.CurrentForm.SortOutputHandler(string.Format("Reading XML: {0}/{1}", (i + 1), this._content.ListCount));
-                BDAT_LIST blist = this._content.Lists[i];
-                string fileName = $"datafile_{blist.ID:000}.xml";
-                byte[] MMS = FileAndContent[fileName];
-                BXML_LIST deserialized;
-                using (XmlReader xmlReader = XmlReader.Create(new MemoryStream(MMS)))
-                {
-					//xmlReader.Normalization = false;
-                    XmlSerializer xmlSerializer = new XmlSerializer(typeof(BXML_LIST));
-                    deserialized = (BXML_LIST)xmlSerializer.Deserialize(xmlReader);
-                }
-                xml_list.Add(deserialized);
-            }
-        }
-
-        public void DumpXML(string dir, bool is64 = false)
-        {
-            for (int l = 0; l < _content.ListCount; l++)
-            {
-                try
-                {
-                    Form1.CurrentForm.SortOutputHandler(string.Format("Dumping: {0}/{1}", (l + 1), _content.ListCount));
-                    BDAT_LIST blist = _content.Lists[l];
-                    BXML_LIST list = new BXML_LIST();
-                    list.Convert(blist, bIntData);
-                    XmlWriterSettings setting = new XmlWriterSettings
+                    else if (bDAT_LIST.Collection.Loose != null && bDAT_LIST.Collection.Loose.FieldCount > 0)
                     {
-                        Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
-                        Indent = true,
-                        NewLineHandling = NewLineHandling.Entitize
-                    };
-                    MemoryStream ms = new MemoryStream();
-                    XmlWriter writer = XmlWriter.Create(ms, setting);
-                    XmlSerializer xmlSerializer = new XmlSerializer(typeof(BXML_LIST));
-                    xmlSerializer.Serialize(writer, list);
-                    string OutputXmlString = Encoding.UTF8.GetString(ms.ToArray());
-                    string fileName = $"datafile_{blist.ID:000}.xml";
-                    File.WriteAllText(dir + "/" + fileName, OutputXmlString, Encoding.UTF8);
-                }
-                catch (Exception e)
-                {
-                    if (e.InnerException != null)
-                    {
-                        string err = e.InnerException.Message;
-                        Prompt.Popup(err);
+                        num = bDAT_LIST.Collection.Loose.Fields[0].Size;
                     }
-                    Prompt.Popup(e.Message);
-                }
-            }
-        }
-
-        public void loadAllXml(string dir)
-        {
-            for (int i = 0; i < this._content.ListCount; i++)
-            {
-                Form1.CurrentForm.SortOutputHandler(string.Format("Reading XML: {0}/{1}", (i + 1), this._content.ListCount));
-                BDAT_LIST blist = this._content.Lists[i];
-                string fileName = $"datafile_{blist.ID:000}.xml";
-                if (File.Exists(dir + "/" + fileName))
-                {
-                    BXML_LIST deserialized;
-                    using (XmlReader xmlReader = XmlReader.Create(dir + "/" + fileName))
+                    if (num == 32 || num == 40)
                     {
-                        XmlSerializer xmlSerializer = new XmlSerializer(typeof(BXML_LIST));
-                        deserialized = (BXML_LIST)xmlSerializer.Deserialize(xmlReader);
+                        _indexFaqs = i;
                     }
-                    xml_list.Add(deserialized);
                 }
-            }
-        }
-
-        public void check()
-        {
-            checkresult = true;
-            for (int j = 0; j < this._content.ListCount; j++)
-            {
-                BDAT_LIST blist = this._content.Lists[j];
-                for (int i = 0; i < xml_list.Count; i++)
+                if (bDAT_LIST.Size > 5000000 && bDAT_LIST.Unknown1 == 1 && bDAT_LIST.Unknown2 == 0)
                 {
-                    if (xml_list[i].id == blist.ID)
+                    int num = 0;
+                    if (bDAT_LIST.Collection.Archive != null && bDAT_LIST.Collection.Archive.SubArchiveCount > 0 && bDAT_LIST.Collection.Archive.SubArchives[0].FieldLookupCount > 0)
                     {
-                        if (blist.Collection.Compressed >= 1)
-                        {
-                            string fileName2 = $"datafile_{blist.ID:000}.xml";
-                            BXML_ARCHIVE xml_archive = xml_list[i].collection.archive;
-                            checkresult = blist.Collection.Archive.Compare(xml_archive);
-                        }
-                        else
-                        {
-                            string fileName = $"datafile_{blist.ID:000}.xml";
-                            BXML_LOOSE xml_loose = xml_list[i].collection.loose;
-                            checkresult = blist.Collection.Loose.Compare(xml_loose);
-                        }
+                        num = bDAT_LIST.Collection.Archive.SubArchives[0].Fields[0].Size;
+                    }
+                    else if (bDAT_LIST.Collection.Loose != null && bDAT_LIST.Collection.Loose.FieldCount > 0)
+                    {
+                        num = bDAT_LIST.Collection.Loose.Fields[0].Size;
+                    }
+                    if (num == 28 || num == 36)
+                    {
+                        _indexCommons = i;
+                    }
+                }
+                if (_indexCommons > -1 && _indexCommons < i && bDAT_LIST.Unknown1 == 1 && bDAT_LIST.Unknown2 == 0)
+                {
+                    int num = 0;
+                    if (bDAT_LIST.Collection.Archive != null && bDAT_LIST.Collection.Archive.SubArchiveCount > 0 && bDAT_LIST.Collection.Archive.SubArchives[0].FieldLookupCount > 0)
+                    {
+                        num = bDAT_LIST.Collection.Archive.SubArchives[0].Fields[0].Size;
+                    }
+                    else if (bDAT_LIST.Collection.Loose != null && bDAT_LIST.Collection.Loose.FieldCount > 0)
+                    {
+                        num = bDAT_LIST.Collection.Loose.Fields[0].Size;
+                    }
+                    if (num == 28)
+                    {
+                        _indexCommands = i;
                     }
                 }
             }
         }
-        public void replaceDatFromXml(bool is64)
-        {
-            for (int j = 0; j < this._content.ListCount; j++)
-            {
-                BDAT_LIST blist = this._content.Lists[j];
-                for (int i = 0; i < xml_list.Count; i++)
-                {
-                    if (xml_list[i].id == blist.ID)
-                    {
-                        string fileName = $"datafile_{blist.ID:000}.xml";
-                        if (blist.Collection.Compressed >= 1)
-                        {
-                            BXML_ARCHIVE archive = xml_list[i].collection.archive;
-                            blist.Collection.Archive.UseChange(archive, bIntData);
-                        }
-                        else
-                        {
-                            BXML_LOOSE loose = xml_list[i].collection.loose;
-                            blist.Collection.Loose.UseChange(loose, bIntData);
-                        }
-                    }
-                }
-            }
-        }
-        private void DetectIndices()
-        {
-            for (int i = 0; i < this._content.ListCount; i++)
-            {
-                uint size;
-                BDAT_LIST bdat_list = this._content.Lists[i];
-                if ((bdat_list.Unknown1 == 2) && (bdat_list.Unknown2 == 0))
-                {
-                    size = 0;
-                    if ((bdat_list.Collection.Compressed >= 1) && ((bdat_list.Collection.Archive.SubArchiveCount > 0) && (bdat_list.Collection.Archive.SubArchives[0].FieldLookupCount > 0)))
-                    {
-                        size = bdat_list.Collection.Archive.SubArchives[0].Fields[0].Size;
-                    }
-                    else if ((bdat_list.Collection.Compressed < 1) && (bdat_list.Collection.Loose.FieldCount > 0))
-                    {
-                        size = bdat_list.Collection.Loose.Fields[0].Size;
-                    }
-                    if (size == 0x20)
-                    {
-                        this._indexFaqs = i;
-                    }
-                }
-                if ((bdat_list.Size > 0x4c4b40) && ((bdat_list.Unknown1 == 1) && (bdat_list.Unknown2 == 0)))
-                {
-                    size = 0;
-                    if ((bdat_list.Collection.Compressed >= 1) && ((bdat_list.Collection.Archive.SubArchiveCount > 0) && (bdat_list.Collection.Archive.SubArchives[0].FieldLookupCount > 0)))
-                    {
-                        size = bdat_list.Collection.Archive.SubArchives[0].Fields[0].Size;
-                    }
-                    else if ((bdat_list.Collection.Compressed < 1) && (bdat_list.Collection.Loose.FieldCount > 0))
-                    {
-                        size = bdat_list.Collection.Loose.Fields[0].Size;
-                    }
-                    if (size == 0x1c)
-                    {
-                        this._indexCommons = i;
-                    }
-                }
-                if ((this._indexCommons > -1) && (((this._indexCommons) < i) && ((bdat_list.Unknown1 == 1) && (bdat_list.Unknown2 == 0))))
-                {
-                    size = 0;
-                    if ((bdat_list.Collection.Compressed >= 1) && ((bdat_list.Collection.Archive.SubArchiveCount > 0) && (bdat_list.Collection.Archive.SubArchives[0].FieldLookupCount > 0)))
-                    {
-                        size = bdat_list.Collection.Archive.SubArchives[0].Fields[0].Size;
-                    }
-                    else if ((bdat_list.Collection.Compressed < 1) && (bdat_list.Collection.Loose.FieldCount > 0))
-                    {
-                        size = bdat_list.Collection.Loose.Fields[0].Size;
-                    }
-                    if (size == 0x1c)
-                    {
-                        this._indexCommands = i;
-                    }
-                }
-            }
-            //object[] objArray1 = new object[] { "List Index Faqs (ID): ", this._indexFaqs, " (", this._content.Lists[this._indexFaqs].ID, string.Empty };
-            //Console.WriteLine(string.Concat(objArray1));
-            //object[] objArray2 = new object[] { "List Index Commons (ID): ", this._indexCommons, " (", this._content.Lists[this._indexCommons].ID, ")" };
-            //Console.WriteLine(string.Concat(objArray2));
-            //object[] objArray3 = new object[] { "List Index Commands (ID): ", this._indexCommands, " (", this._content.Lists[this._indexCommands].ID, ")" };
-            //Console.WriteLine(string.Concat(objArray3));
-        }
-
-        public void Load(MemoryStream iStream, BDAT_TYPE iType, bool is64, bool OnlyIDS = false)
-        {
-            if (iType == BDAT_TYPE.BDAT_PLAIN || iType == BDAT_TYPE.BDAT_BINARY)
-            {
-                this._content = new BDAT_CONTENT();
-                this._content.Read(iStream, iType, is64, OnlyIDS);
-                this.DetectIndices();
-            }
-        }
-
-        public void Save(MemoryStream oStream, BDAT_TYPE oType, bool is64)
-        {
-            if (oType == BDAT_TYPE.BDAT_BINARY)
-            {
-                this._content.Write(oStream, oType, is64);
-            }
-        }
-
     }
-    public enum BDAT_TYPE
-    {
-        BDAT_XML = 1,
-        BDAT_PLAIN = 2,
-        BDAT_BINARY = 3,
-        BDAT_UNKNOWN = 4
-    }
+
     public class BDAT_ARCHIVE
     {
-        public uint SubArchiveCount;
-        public ushort Unknown;
+        public int SubArchiveCount;
+
+        public int Unknown;
+
         public BDAT_SUBARCHIVE[] SubArchives;
+
+        public void Read(BinaryReader br)
+        {
+            SubArchiveCount = br.ReadInt32();
+            Unknown = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            SubArchives = new BDAT_SUBARCHIVE[SubArchiveCount];
+            for (int i = 0; i < SubArchiveCount; i++)
+            {
+                SubArchives[i] = new BDAT_SUBARCHIVE();
+                SubArchives[i].Read(br);
+            }
+        }
+
+        public void Write(BinaryWriter bw)
+        {
+            bw.Write(SubArchiveCount);
+            bw.Write(Ultily.WriteIntTo2Bytes(Unknown));
+            for (int i = 0; i < SubArchiveCount; i++)
+            {
+                SubArchives[i].Write(bw);
+            }
+        }
+
+        public void UseChange(BXML_ARCHIVE newData)
+        {
+            for (int i = 0; i < SubArchives.Length; i++)
+            {
+                SubArchives[i].UseChange(newData.SubArchives[i]);
+            }
+        }
 
         public bool Compare(BXML_ARCHIVE newData)
         {
-            for (int i = 0; i < this.SubArchives.Length; i++)
+            for (int i = 0; i < SubArchives.Length; i++)
             {
-                if (!this.SubArchives[i].Compare(newData.SubArchives[i]))
+                if (!SubArchives[i].Compare(newData.SubArchives[i]))
                 {
                     return false;
                 }
             }
             return true;
         }
-
-        public int GetSize()
-        {
-            int num = 0;
-            for (int i = 0; i < this.SubArchives.Length; i++)
-            {
-                num += this.SubArchives[i].GetSize();
-            }
-            return num;
-        }
-
-        public void Read(BinaryReader iStream, BDAT_TYPE iType)
-        {
-            this.SubArchiveCount = iStream.ReadUInt32();
-            this.Unknown = iStream.ReadUInt16();
-            this.SubArchives = new BDAT_SUBARCHIVE[this.SubArchiveCount];
-            for (int i = 0; i < this.SubArchiveCount; i++)
-            {
-                this.SubArchives[i] = new BDAT_SUBARCHIVE();
-                this.SubArchives[i].Read(iStream, iType);
-            }
-        }
-
-        public void UseChange(BXML_ARCHIVE newData, bool bIntData)
-        {
-            for (int i = 0; i < this.SubArchives.Length; i++)
-            {
-                this.SubArchives[i].UseChange(newData.SubArchives[i], bIntData);
-            }
-        }
-
-        public void Write(BinaryWriter oStream, BDAT_TYPE oType)
-        {
-            oStream.Write(this.SubArchiveCount);
-            oStream.Write(this.Unknown);
-            for (uint i = 0; i < this.SubArchiveCount; i++)
-            {
-                this.SubArchives[i].Write(oStream, oType);
-            }
-        }
     }
+
     public class BDAT_COLLECTION
     {
         public byte Compressed;
+
         public byte Deprecated;
+
         public BDAT_ARCHIVE Archive;
+
         public BDAT_LOOSE Loose;
 
-        public void Read(BinaryReader iStream, BDAT_TYPE iType)
+        public void Read(BinaryReader br)
         {
-            this.Compressed = iStream.ReadByte();
-            if (this.Compressed < 1)
+            Compressed = br.ReadByte();
+            if (Convert.ToBoolean(Compressed))
             {
-                this.Loose = new BDAT_LOOSE();
-                this.Loose.Read(iStream, iType);
+                if (Compressed > 1)
+                {
+                    br.BaseStream.Seek(br.BaseStream.Position - 1, SeekOrigin.Begin);
+                }
+                Archive = new BDAT_ARCHIVE();
+                Archive.Read(br);
+                Loose = null;
+                if (Compressed > 1)
+                {
+                    Deprecated = br.ReadByte();
+                }
             }
             else
             {
-                if (this.Compressed > 1)
-                {
-                    iStream.BaseStream.Position = (iStream.BaseStream.Position - 1);
-                }
-                this.Archive = new BDAT_ARCHIVE();
-                this.Archive.Read(iStream, iType);
-                if (this.Compressed > 1)
-                {
-                    this.Deprecated = iStream.ReadByte();
-                }
+                Loose = new BDAT_LOOSE();
+                Loose.Read(br);
+                Archive = null;
             }
         }
 
-        public void Write(BinaryWriter oStream, BDAT_TYPE oType)
+        /// <param name="elementCount">Table element count from list header. 64-bit loose tables with elementCount==1 pad FieldCount to 8 bytes.</param>
+        public void Read64(BinaryReader br, byte elementCount)
         {
-            oStream.Write(this.Compressed);
-            if (this.Compressed < 1)
+            Compressed = br.ReadByte();
+            if (Convert.ToBoolean(Compressed))
             {
-                this.Loose.Write(oStream, oType);
+                if (Compressed > 1)
+                {
+                    br.BaseStream.Seek(br.BaseStream.Position - 1, SeekOrigin.Begin);
+                }
+                // Compressed blocks use the same layout on 32/64
+                Archive = new BDAT_ARCHIVE();
+                Archive.Read(br);
+                Loose = null;
+                if (Compressed > 1)
+                {
+                    Deprecated = br.ReadByte();
+                }
             }
             else
             {
-                if (this.Compressed > 1)
+                Loose = new BDAT_LOOSE();
+                Loose.Read64(br, elementCount);
+                Archive = null;
+            }
+        }
+
+        public void Write(BinaryWriter bw)
+        {
+            bw.Write(Compressed);
+            if (Convert.ToBoolean(Compressed))
+            {
+                if (Compressed > 1)
                 {
-                    oStream.BaseStream.Seek(oStream.BaseStream.Position - 1, SeekOrigin.Begin);
+                    bw.BaseStream.Seek(bw.BaseStream.Position - 1, SeekOrigin.Begin);
                 }
-                this.Archive.Write(oStream, oType);
-                if (this.Compressed > 1)
+                Archive.Write(bw);
+                if (Compressed > 1)
                 {
-                    oStream.Write(this.Deprecated);
+                    bw.Write(Deprecated);
                 }
+            }
+            else
+            {
+                Loose.Write(bw);
+            }
+        }
+
+        public void Write64(BinaryWriter bw)
+        {
+            bw.Write(Compressed);
+            if (Convert.ToBoolean(Compressed))
+            {
+                if (Compressed > 1)
+                {
+                    bw.BaseStream.Seek(bw.BaseStream.Position - 1, SeekOrigin.Begin);
+                }
+                Archive.Write(bw);
+                if (Compressed > 1)
+                {
+                    bw.Write(Deprecated);
+                }
+            }
+            else
+            {
+                Loose.Write64(bw);
             }
         }
     }
@@ -440,537 +288,922 @@ namespace Revamped_BnS_Buddy.LegacyBin
     public class BDAT_CONTENT
     {
         public byte[] Signature;
-        public uint Version;
+
+        public int Version;
+
         public byte[] Unknown;
-        public uint ListCount;
+
+        public int ListCount;
+
         public BDAT_HEAD HeadList;
+
         public BDAT_LIST[] Lists;
 
-        public void Read(MemoryStream _iStream, BDAT_TYPE iType, bool is64 = false, bool OnlyIDS = false)
+        /// <summary>True when this content was read (or should be written) as a 64-bit BNS bin.</summary>
+        public bool Is64Bit;
+
+        /// <summary>
+        /// Detect 32 vs 64-bit datafile/localfile layout from the header.
+        /// 32-bit uses 4-byte size fields after version; 64-bit uses 8-byte size fields.
+        /// </summary>
+        public static bool DetectIs64Bit(BinaryReader br)
         {
-            BinaryReader iStream = new BinaryReader(_iStream);
-            this.Signature = iStream.ReadBytes(8);
-            this.Version = iStream.ReadUInt32();
-            this.Unknown = iStream.ReadBytes((is64 ? 13 : 9));
-            this.ListCount = is64 ? (uint)iStream.ReadUInt64() : iStream.ReadUInt32();
-            this.HeadList = new BDAT_HEAD();
-            this.HeadList.Complement = false;
-            if (this.ListCount < 20)
+            long saved = br.BaseStream.Position;
+            try
             {
-                this.HeadList.Complement = true;
+                if (br.BaseStream.Length < 48)
+                {
+                    return false;
+                }
+
+                br.BaseStream.Position = 0;
+                br.ReadBytes(8); // magic
+                br.ReadBytes(9); // datafile version (1) + client version (8)
+
+                long afterVersion = br.BaseStream.Position;
+
+                // Interpret as 32-bit: TotalTableSize(int32), ListCount(int32)
+                int total32 = br.ReadInt32();
+                int count32 = br.ReadInt32();
+                bool looks32 = count32 >= 1 && count32 <= 512 && total32 > 0;
+
+                // Interpret as 64-bit: TotalTableSize(int64), ListCount(int64)
+                br.BaseStream.Position = afterVersion;
+                long total64 = br.ReadInt64();
+                long count64 = br.ReadInt64();
+                bool looks64 = count64 >= 1 && count64 <= 512 && total64 > 0;
+
+                // On a real 32-bit file, the 64-bit "list count" is TotalTableSize|(ListCount<<32) and is huge.
+                if (looks64 && !looks32)
+                {
+                    return true;
+                }
+                if (looks32 && !looks64)
+                {
+                    return false;
+                }
+                if (looks64 && looks32)
+                {
+                    // Ambiguous: prefer 64 when TotalTableSize does not fit in 32 bits
+                    return total64 > int.MaxValue;
+                }
+                return false;
             }
-            this.HeadList.Read(iStream, iType, is64, OnlyIDS);
-            this.Lists = new BDAT_LIST[this.ListCount];
-            for (uint k = 0; k < this.ListCount; k++)
+            finally
             {
-                BDat.CurrentFile = (int)k;
-                try
-                {
-                    this.Lists[k] = new BDAT_LIST();
-                    this.Lists[k].Read(iStream, iType);
-                }
-                catch(Exception e)
-                {
-                    Prompt.Popup("Error Reading file: " + k + " | Stacktrace: " + e.StackTrace);
-                }
+                br.BaseStream.Position = saved;
             }
         }
 
-        public void Write(MemoryStream _oStream, BDAT_TYPE oType, bool is64)
+        public void Read(BinaryReader br)
         {
-            BinaryWriter oStream = new BinaryWriter(_oStream);
-            oStream.Write(this.Signature);
-            oStream.Write(this.Version);
-            oStream.Write(this.Unknown);
-            if (is64) oStream.Write((ulong)this.ListCount); else oStream.Write(this.ListCount);
-            this.HeadList.Write(oStream, oType, is64);
-            for (uint k = 0; k < this.ListCount; k++)
+            Is64Bit = false;
+            Signature = br.ReadBytes(8);
+            Version = br.ReadInt32();
+            Unknown = br.ReadBytes(9);
+            ListCount = br.ReadInt32();
+            HeadList = new BDAT_HEAD();
+            // Name table is present only when table count > 10 (matches BNS client / BnsBinTool)
+            HeadList.Complement = ListCount <= 10;
+            HeadList.Read(br);
+            Lists = new BDAT_LIST[ListCount];
+            for (int i = 0; i < ListCount; i++)
             {
-                Form1.CurrentForm.SortOutputHandler(string.Format("\rPacking XML: {0}/{1}", (k + 1), this.ListCount));
-                try
+                Lists[i] = new BDAT_LIST();
+                Lists[i].Read(br);
+            }
+        }
+
+        public void Read64(BinaryReader br)
+        {
+            Is64Bit = true;
+            BinEditOptions.Report("BDAT_CONTENT (64-bit)...");
+            Signature = br.ReadBytes(8);
+            Version = br.ReadInt32();
+            // 64-bit: version byte + client version + start of 8-byte TotalTableSize already partially in Version/Unknown
+            // Unknown is 13 bytes so Version(4)+Unknown(13) = datafileVersion(1)+clientVersion(8)+TotalTableSize(8)
+            Unknown = br.ReadBytes(13);
+            ListCount = (int)br.ReadInt64();
+            HeadList = new BDAT_HEAD();
+            HeadList.Complement = ListCount <= 10;
+            BinEditOptions.Report("BDAT_HEAD (64-bit)...");
+            HeadList.Read64(br);
+            Lists = new BDAT_LIST[ListCount];
+            BinEditOptions.Report("BDAT_LIST (64-bit)...");
+            for (int i = 0; i < ListCount; i++)
+            {
+                if (i % 10 == 0 || i == ListCount - 1)
                 {
-                    this.Lists[k].Write(oStream, oType);
+                    BinEditOptions.Report("BDAT_LIST " + (i + 1) + "/" + ListCount);
                 }
-                catch (Exception e)
-                {
-                    if (e.InnerException != null)
-                    {
-                        string err = e.InnerException.Message;
-                        Prompt.Popup(err);
-                    }
-                    Prompt.Popup(e.Message);
-                }
+                Lists[i] = new BDAT_LIST();
+                Lists[i].Read64(br);
+            }
+        }
+
+        public void Write(BinaryWriter bw)
+        {
+            Is64Bit = false;
+            bw.Write(Signature);
+            bw.Write(Version);
+            bw.Write(Unknown);
+            bw.Write(ListCount);
+            HeadList.Write(bw);
+            for (int i = 0; i < ListCount; i++)
+            {
+                Lists[i].Write(bw);
+            }
+        }
+
+        public void Write64(BinaryWriter bw)
+        {
+            Is64Bit = true;
+            bw.Write(Signature);
+            bw.Write(Version);
+            bw.Write(Unknown);
+            bw.Write((long)ListCount);
+            HeadList.Write64(bw);
+            for (int i = 0; i < ListCount; i++)
+            {
+                Lists[i].Write64(bw);
             }
         }
     }
+
     public class BDAT_FIELDTABLE
     {
-        public ushort Unknown1;
-        public ushort Unknown2;
-        public uint Size;
-        public uint ID;
+        public int Unknown1;
+
+        public int Unknown2;
+
+        public int Size;
+
         public byte[] Data;
 
-        public int GetSize()
-        {
-            return ((this.Data != null) ? this.Data.Length : 0);
-        }
+        public int ID;
 
-        public bool isEmpty()
+        public void Read(BinaryReader br)
         {
-            return (this.Data == null);
-        }
-
-        public void Read(BinaryReader iStream, BDAT_TYPE iType)
-        {
-            this.Unknown1 = iStream.ReadUInt16();
-            this.Unknown2 = iStream.ReadUInt16();
-            this.Size = iStream.ReadUInt32();
-            this.ID = iStream.ReadUInt32();
-            //this.Data = new byte[this.Size - 12]; // all 12 was 8
-            if (((int)this.Size - 12) > 0)
+            Unknown1 = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            Unknown2 = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            // Unknown1 == 255 => size is stored as uint16; otherwise as int32
+            if (Unknown1 == 255)
             {
-                this.Data = iStream.ReadBytes((int)this.Size - 12);
+                Size = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
             }
             else
             {
-                this.Data = new byte[0];
+                Size = br.ReadInt32();
+            }
+            if (Size >= 12)
+            {
+                ID = br.ReadInt32();
+                Data = br.ReadBytes(Size - 12);
+            }
+            else
+            {
+                Data = new byte[0];
             }
         }
 
-        public void UseChange(BXML_FIELDTABLE newData, bool bIntData)
+        public void Write(BinaryWriter bw)
         {
-            if (newData != null)
+            bw.Write(Ultily.WriteIntTo2Bytes(Unknown1));
+            bw.Write(Ultily.WriteIntTo2Bytes(Unknown2));
+            // Mirror Read: size width depends on Unknown1, not on Size alone
+            if (Unknown1 == 255)
             {
-                this.Unknown1 = newData.unk1;
-                this.Unknown2 = newData.unk2;
-                this.Size = newData.size;
-                this.ID = newData.ID;
-                if (bIntData)
+                bw.Write(Ultily.WriteIntTo2Bytes(Size));
+            }
+            else
+            {
+                bw.Write(Size);
+            }
+            if (Size >= 12)
+            {
+                bw.Write(ID);
+                if (Data != null && Data.Length > 0)
                 {
-                    this.Data = bcrypt.IntToBytes(newData.data, newData.size - 12);
+                    bw.Write(Data);
+                }
+            }
+        }
+
+        public void UseChange(BXML_FIELDTABLE newData)
+        {
+            if (newData == null)
+            {
+                // Keep a writable zero-size placeholder (8-byte header), not a skipped null slot
+                ID = 0;
+                Unknown1 = 0;
+                Unknown2 = 0;
+                Size = 0;
+                Data = new byte[0];
+                return;
+            }
+            ID = (int)newData.id;
+            Unknown1 = newData.unk1;
+            Unknown2 = newData.unk2;
+            Size = (int)newData.size;
+            if (Size >= 12)
+            {
+                bool useInt = BinEditOptions.UseIntData;
+                if (useInt)
+                {
+                    Data = bcrypt.IntToBytes(newData.data, newData.size - 8);
                 }
                 else
                 {
-                    this.Data = bcrypt.HexToBytes(newData.data, newData.size - 12);
+                    Data = string.IsNullOrEmpty(newData.data)
+                        ? new byte[0]
+                        : bcrypt.HexToBytes(newData.data, newData.size - 8);
                 }
+            }
+            else
+            {
+                // Size==0 placeholders still occupy a field header in the bin — do not null out
+                Data = new byte[0];
             }
         }
 
-        public void Write(BinaryWriter oStream, BDAT_TYPE iType)
+        public bool IsEmpty()
         {
-            oStream.Write(this.Unknown1);
-            oStream.Write(this.Unknown2);
-            oStream.Write(this.Size);
-            oStream.Write(this.ID);
-            for (int i = 0; i < (this.Size - 12); i++)
-            {
-                oStream.Write(this.Data[i]);
-            }
+            return Data == null;
         }
     }
+
     public class BDAT_HEAD
     {
         public bool Complement;
-        public uint Size_1;
-        public uint Size_2;
-        public uint Size_3;
+
+        public int Size_1;
+
+        public int Size_2;
+
+        public int Size_3;
+
         public byte[] Padding;
+
         public byte[] Data;
 
-        public void Read(BinaryReader iStream, BDAT_TYPE iType, bool is64, bool OnlyIDS)
+        public void Read(BinaryReader br)
         {
-            this.Size_1 = (is64 ? (uint)iStream.ReadUInt64() : iStream.ReadUInt32());
-            this.Size_2 = (is64 ? (uint)iStream.ReadUInt64() : iStream.ReadUInt32());
-            this.Size_3 = (is64 ? (uint)iStream.ReadUInt64() : iStream.ReadUInt32());
-            this.Padding = iStream.ReadBytes(62);
-            this.Data = new byte[this.Size_1];
-            if (!this.Complement)
+            Size_1 = br.ReadInt32();
+            Size_2 = br.ReadInt32();
+            Size_3 = br.ReadInt32();
+            Padding = br.ReadBytes(62);
+            Data = new byte[Size_1];
+            if (!Complement)
             {
-                if (OnlyIDS)
-                {
-                    iStream.ReadBytes((int)this.Size_1);
-                }
-                else
-                {
-                    this.Data = iStream.ReadBytes((int)this.Size_1);
-                }
+                Data = br.ReadBytes(Size_1);
             }
         }
 
-        public void Write(BinaryWriter oStream, BDAT_TYPE oType, bool is64)
+        public void Read64(BinaryReader br)
         {
-            if (is64) oStream.Write((ulong)this.Size_1); else oStream.Write(this.Size_1);
-            if (is64) oStream.Write((ulong)this.Size_2); else oStream.Write(this.Size_2);
-            if (is64) oStream.Write((ulong)this.Size_3); else oStream.Write(this.Size_3);
-            oStream.Write(this.Padding);
-            if (!this.Complement)
+            Size_1 = (int)br.ReadInt64();
+            Size_2 = (int)br.ReadInt64();
+            Size_3 = (int)br.ReadInt64();
+            Padding = br.ReadBytes(62);
+            Data = new byte[Size_1];
+            if (!Complement)
             {
-                oStream.Write(this.Data);
+                Data = br.ReadBytes(Size_1);
+            }
+        }
+
+        public void Write(BinaryWriter bw)
+        {
+            bw.Write(Size_1);
+            bw.Write(Size_2);
+            bw.Write(Size_3);
+            bw.Write(Padding);
+            if (!Complement)
+            {
+                bw.Write(Data);
+            }
+        }
+
+        public void Write64(BinaryWriter bw)
+        {
+            bw.Write((long)Size_1);
+            bw.Write((long)Size_2);
+            bw.Write((long)Size_3);
+            bw.Write(Padding);
+            if (!Complement)
+            {
+                bw.Write(Data);
             }
         }
     }
+
     public class BDAT_LIST
     {
-        public static int curSaveId;
         public byte Unknown1;
-        public ushort ID;
-        public ushort Unknown2;
-        public ushort Unknown3;
-        public uint Size;
+
+        public int ID;
+
+        public int Unknown2;
+
+        public int Unknown3;
+
+        public int Size;
+
         public BDAT_COLLECTION Collection;
 
-        public void Read(BinaryReader iStream, BDAT_TYPE iType)
+        /// <summary>
+        /// Bytes after the logical collection payload up to the declared Size.
+        /// Official bins often pad each table with trailing zeros; clients can be picky if these are dropped.
+        /// </summary>
+        public byte[] TrailingPadding;
+
+        private void CaptureTrailingPadding(BinaryReader br, long payloadStart)
         {
-            this.Unknown1 = iStream.ReadByte();
-            this.ID = iStream.ReadUInt16();
-            this.Unknown2 = iStream.ReadUInt16();
-            this.Unknown3 = iStream.ReadUInt16();
-            this.Size = iStream.ReadUInt32();
-            uint num = (uint)iStream.BaseStream.Position;
-            this.Collection = new BDAT_COLLECTION();
-            this.Collection.Read(iStream, iType);
-            uint num2 = (uint)iStream.BaseStream.Position;
-            if ((num + this.Size) != num2)
+            long afterContent = br.BaseStream.Position;
+            long expectedEnd = payloadStart + Size;
+            if (expectedEnd > afterContent)
             {
-                iStream.BaseStream.Position = (num + this.Size);
+                int padLen = (int)(expectedEnd - afterContent);
+                TrailingPadding = br.ReadBytes(padLen);
+            }
+            else
+            {
+                TrailingPadding = null;
+                if (expectedEnd < afterContent)
+                {
+                    // Collection over-read; snap to declared end so next table aligns
+                    br.BaseStream.Seek(expectedEnd, SeekOrigin.Begin);
+                }
             }
         }
 
-        public void Write(BinaryWriter oStream, BDAT_TYPE oType)
+        private void WriteTrailingPadding(BinaryWriter bw)
         {
-            curSaveId = this.ID;
-            oStream.Write(this.Unknown1);
-            oStream.Write(this.ID);
-            oStream.Write(this.Unknown2);
-            oStream.Write(this.Unknown3);
-            oStream.Write(this.Size);
-            uint num = (uint)oStream.BaseStream.Position;
-            this.Collection.Write(oStream, oType);
-            uint num2 = (uint)oStream.BaseStream.Position;
-            oStream.BaseStream.Seek(num - 4, SeekOrigin.Begin);
-            this.Size = num2 - num;
-            oStream.Write(this.Size);
-            oStream.BaseStream.Seek(this.Size, SeekOrigin.Current);
+            if (TrailingPadding != null && TrailingPadding.Length > 0)
+            {
+                bw.Write(TrailingPadding);
+            }
+        }
+
+        public void Read(BinaryReader br)
+        {
+            Unknown1 = br.ReadByte();
+            ID = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            Unknown2 = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            Unknown3 = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            Size = br.ReadInt32();
+            long position = br.BaseStream.Position;
+            Collection = new BDAT_COLLECTION();
+            Collection.Read(br);
+            CaptureTrailingPadding(br, position);
+        }
+
+        public void Read64(BinaryReader br)
+        {
+            Unknown1 = br.ReadByte(); // ElementCount
+            ID = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            Unknown2 = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            Unknown3 = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            Size = br.ReadInt32(); // table payload size is still 32-bit
+            long position = br.BaseStream.Position;
+            Collection = new BDAT_COLLECTION();
+            Collection.Read64(br, Unknown1);
+            CaptureTrailingPadding(br, position);
+        }
+
+        public void Write(BinaryWriter bw)
+        {
+            bw.Write(Unknown1);
+            bw.Write(Ultily.WriteIntTo2Bytes(ID));
+            bw.Write(Ultily.WriteIntTo2Bytes(Unknown2));
+            bw.Write(Ultily.WriteIntTo2Bytes(Unknown3));
+            long sizePos = bw.BaseStream.Position;
+            bw.Write(Size);
+            long position = bw.BaseStream.Position;
+            Collection.Write(bw);
+            WriteTrailingPadding(bw);
+            long position2 = bw.BaseStream.Position;
+            Size = (int)(position2 - position);
+            long end = bw.BaseStream.Position;
+            bw.BaseStream.Seek(sizePos, SeekOrigin.Begin);
+            bw.Write(Size);
+            bw.BaseStream.Seek(end, SeekOrigin.Begin);
+        }
+
+        public void Write64(BinaryWriter bw)
+        {
+            bw.Write(Unknown1);
+            bw.Write(Ultily.WriteIntTo2Bytes(ID));
+            bw.Write(Ultily.WriteIntTo2Bytes(Unknown2));
+            bw.Write(Ultily.WriteIntTo2Bytes(Unknown3));
+            long sizePos = bw.BaseStream.Position;
+            bw.Write(Size);
+            long position = bw.BaseStream.Position;
+            Collection.Write64(bw);
+            WriteTrailingPadding(bw);
+            long position2 = bw.BaseStream.Position;
+            Size = (int)(position2 - position);
+            long end = bw.BaseStream.Position;
+            bw.BaseStream.Seek(sizePos, SeekOrigin.Begin);
+            bw.Write(Size);
+            bw.BaseStream.Seek(end, SeekOrigin.Begin);
         }
     }
+
     public class BDAT_LOOKUPTABLE
     {
-        public uint Size;
+        public int Size;
+
         public byte[] Data;
+
+        public void Read(BinaryReader br)
+        {
+            Data = br.ReadBytes(Size);
+        }
+
+        public void Write(BinaryWriter bw)
+        {
+            bw.Write(Data);
+        }
+
+        public int UseChange(BXML_LOOKUPTABLE newData)
+        {
+            if (newData == null || newData.words == null)
+            {
+                Data = Data ?? new byte[0];
+                Size = Data.Length;
+                return Size;
+            }
+            int SizeLookup = 0;
+            Data = bnsTool.WordToLookUpData(newData.words, ref SizeLookup);
+            Size = SizeLookup;
+            return SizeLookup;
+        }
 
         public int Compare(BXML_LOOKUPTABLE newData)
         {
-            int sizeLookup = 0;
-            byte[] buffer = bnsTool.WordToLookUpData(newData.words, ref sizeLookup);
-            if (sizeLookup != this.Size)
+            if (newData == null || newData.words == null)
+            {
+                // Nothing to compare from XML — treat as OK if we have no lookup either
+                return (Data == null || Data.Length == 0) ? 0 : 1;
+            }
+            if (Data == null)
+            {
+                return newData.words.Length == 0 ? 0 : 1;
+            }
+            int SizeLookup = 0;
+            byte[] array = bnsTool.WordToLookUpData(newData.words, ref SizeLookup);
+            if (SizeLookup != Size)
             {
                 return 1;
             }
-            for (int i = 0; i < this.Size; i++)
+            for (int i = 0; i < Size; i++)
             {
-                if (this.Data[i] != buffer[i])
+                if (Data[i] != array[i])
                 {
                     return 2;
                 }
             }
             return 0;
         }
-
-        public int GetSize()
-        {
-            return this.Data.Length;
-        }
-
-        public void Read(BinaryReader iStream, BDAT_TYPE iType)
-        {
-            this.Data = new byte[this.Size];
-            this.Data = iStream.ReadBytes((int)this.Size);
-        }
-
-        public int UseChange(BXML_LOOKUPTABLE newData)
-        {
-            string[] words = newData.words;
-            int sizeLookup = 0;
-            this.Data = bnsTool.WordToLookUpData(newData.words, ref sizeLookup);
-            this.Size = (uint)sizeLookup;
-            return sizeLookup;
-        }
-
-        public void Write(BinaryWriter iStream, BDAT_TYPE iType)
-        {
-            iStream.Write(this.Data);
-        }
     }
     public class BDAT_LOOSE
     {
-        public List<string> words;
-        public uint FieldCountUnfixed;
-        public uint FieldCount;
-        public uint SizeFields;
-        public uint SizeLookup;
+        public int FieldCountUnfixed;
+
+        public int FieldCount;
+
+        public int SizeFields;
+
+        public int SizeLookup;
+
         public byte Unknown;
+
         public BDAT_FIELDTABLE[] Fields;
+
         public int SizePadding;
+
         public byte[] Padding;
+
         public BDAT_LOOKUPTABLE Lookup;
+
+        public bool Is64;
+
+        /// <summary>
+        /// Minimum bytes needed to start a field header (unk1 + unk2 + size16).
+        /// Declared FieldCount can exceed what fits in SizeFields; never read past the field region.
+        /// </summary>
+        private const int MinFieldHeaderBytes = 6;
+
+        private void ReadFieldsAndLookup(BinaryReader br)
+        {
+            long fieldsEnd = br.BaseStream.Position + SizeFields;
+            Fields = new BDAT_FIELDTABLE[FieldCount];
+            int actualCount = 0;
+            for (int i = 0; i < FieldCount; i++)
+            {
+                long position = br.BaseStream.Position;
+                long remaining = fieldsEnd - position;
+                if (remaining < MinFieldHeaderBytes)
+                {
+                    break;
+                }
+
+                long fieldStart = position;
+                var field = new BDAT_FIELDTABLE();
+                field.Read(br);
+                if (br.BaseStream.Position > fieldsEnd)
+                {
+                    // Partial/false field that spilled into padding or lookup — rewind
+                    br.BaseStream.Seek(fieldStart, SeekOrigin.Begin);
+                    break;
+                }
+
+                Fields[i] = field;
+                actualCount++;
+            }
+
+            FieldCount = actualCount;
+            if (Fields.Length != actualCount)
+            {
+                Array.Resize(ref Fields, actualCount);
+            }
+
+            long afterFields = br.BaseStream.Position;
+            if (afterFields < fieldsEnd)
+            {
+                SizePadding = (int)(fieldsEnd - afterFields);
+                Padding = br.ReadBytes(SizePadding);
+            }
+            else
+            {
+                SizePadding = 0;
+                Padding = null;
+                if (afterFields > fieldsEnd)
+                {
+                    br.BaseStream.Seek(fieldsEnd, SeekOrigin.Begin);
+                }
+            }
+
+            Lookup = new BDAT_LOOKUPTABLE();
+            Lookup.Size = SizeLookup;
+            if (SizeLookup > 0)
+            {
+                Lookup.Read(br);
+            }
+            else
+            {
+                Lookup.Data = new byte[0];
+            }
+        }
+
+        public void Read(BinaryReader br)
+        {
+            Is64 = false;
+            FieldCount = br.ReadInt32();
+            FieldCountUnfixed = FieldCount;
+            SizeFields = br.ReadInt32();
+            SizeLookup = br.ReadInt32();
+            Unknown = br.ReadByte();
+            ReadFieldsAndLookup(br);
+        }
+
+        /// <summary>
+        /// 64-bit uncompressed tables: when elementCount == 1, FieldCount is followed by an extra int32 (0).
+        /// SizeFields/SizeLookup remain 32-bit. Matches official BNS x64 datafile layout.
+        /// </summary>
+        public void Read64(BinaryReader br, byte elementCount)
+        {
+            FieldCount = br.ReadInt32();
+            FieldCountUnfixed = FieldCount;
+            // Only single-element loose tables pad FieldCount to 8 bytes on 64-bit
+            Is64 = elementCount == 1;
+            if (Is64)
+            {
+                br.ReadInt32(); // padding (always 0)
+            }
+            SizeFields = br.ReadInt32();
+            SizeLookup = br.ReadInt32();
+            Unknown = br.ReadByte();
+            ReadFieldsAndLookup(br);
+        }
+
+        public void Write(BinaryWriter bw)
+        {
+            bw.Write(FieldCountUnfixed);
+            long sizesPos = bw.BaseStream.Position;
+            bw.Write(SizeFields);
+            bw.Write(SizeLookup);
+            bw.Write(Unknown);
+            long fieldsStart = bw.BaseStream.Position;
+            int writeCount = Fields != null ? Fields.Length : FieldCount;
+            for (int i = 0; i < writeCount; i++)
+            {
+                if (Fields[i] != null)
+                {
+                    Fields[i].Write(bw);
+                }
+            }
+            if (SizePadding >= 0)
+            {
+                if (SizePadding > 0 && Padding != null)
+                {
+                    bw.Write(Padding);
+                }
+                long afterFields = bw.BaseStream.Position;
+                SizeFields = (int)(afterFields - fieldsStart);
+                if (Lookup != null)
+                {
+                    Lookup.Size = SizeLookup;
+                    Lookup.Write(bw);
+                }
+                SizeLookup = (int)(bw.BaseStream.Position - afterFields);
+                long end = bw.BaseStream.Position;
+                bw.BaseStream.Seek(sizesPos, SeekOrigin.Begin);
+                bw.Write(SizeFields);
+                bw.Write(SizeLookup);
+                bw.BaseStream.Seek(end, SeekOrigin.Begin);
+            }
+        }
+
+        public void Write64(BinaryWriter bw)
+        {
+            // Mirror Read64: pad FieldCount only when this loose table used 64-bit field-count layout
+            if (Is64)
+            {
+                bw.Write(FieldCountUnfixed);
+                bw.Write(0); // 32-bit zero pad (same as (long)FieldCount for counts that fit int)
+            }
+            else
+            {
+                bw.Write(FieldCountUnfixed);
+            }
+            long sizesPos = bw.BaseStream.Position;
+            bw.Write(SizeFields);
+            bw.Write(SizeLookup);
+            bw.Write(Unknown);
+            long fieldsStart = bw.BaseStream.Position;
+            int writeCount = Fields != null ? Fields.Length : FieldCount;
+            for (int i = 0; i < writeCount; i++)
+            {
+                if (Fields[i] != null)
+                {
+                    Fields[i].Write(bw);
+                }
+            }
+            if (SizePadding >= 0)
+            {
+                if (SizePadding > 0 && Padding != null)
+                {
+                    bw.Write(Padding);
+                }
+                long afterFields = bw.BaseStream.Position;
+                SizeFields = (int)(afterFields - fieldsStart);
+                if (Lookup != null)
+                {
+                    Lookup.Size = SizeLookup;
+                    Lookup.Write(bw);
+                }
+                SizeLookup = (int)(bw.BaseStream.Position - afterFields);
+                long end = bw.BaseStream.Position;
+                bw.BaseStream.Seek(sizesPos, SeekOrigin.Begin);
+                bw.Write(SizeFields);
+                bw.Write(SizeLookup);
+                bw.BaseStream.Seek(end, SeekOrigin.Begin);
+            }
+        }
+
+        public void UseChange(BXML_LOOSE newData)
+        {
+            if (newData == null)
+            {
+                return;
+            }
+            BXML_FIELDTABLE[] fields = newData.fields ?? new BXML_FIELDTABLE[0];
+            // Preserve declared count from XML (may be > actual field array in some tables)
+            FieldCountUnfixed = (int)newData.countFieldsUnfixed;
+            if (FieldCountUnfixed < fields.Length)
+            {
+                FieldCountUnfixed = fields.Length;
+            }
+            Fields = new BDAT_FIELDTABLE[fields.Length];
+            for (int i = 0; i < fields.Length; i++)
+            {
+                Fields[i] = new BDAT_FIELDTABLE();
+                Fields[i].UseChange(fields[i]);
+            }
+            // Write every field including Size==0 placeholders (each is still an 8-byte header).
+            // Previously empty Size==0 rows were dropped from FieldCount, shrinking bins (e.g. -560 on table 405).
+            FieldCount = fields.Length;
+            // SizePadding / Padding are intentionally left as read from the original bin
+            if (Lookup == null)
+            {
+                Lookup = new BDAT_LOOKUPTABLE();
+            }
+            SizeLookup = Lookup.UseChange(newData.lookup);
+        }
 
         public bool Compare(BXML_LOOSE newData)
         {
-            return (this.Lookup.Compare(newData.lookup) <= 0);
-        }
-
-        public int GetSize()
-        {
-            int num = 0;
-            for (int i = 0; i < this.Fields.Length; i++)
+            if (newData == null)
             {
-                num += this.Fields[i].GetSize();
-                if (this.Fields[i].Data == null)
-                {
-                    //Console.Write("\rFieldCount" + this.FieldCount);
-                    //Console.Write("\rFieldCountUnfixed" + this.FieldCountUnfixed);
-                    object[] objArray1 = new object[] { "Fields[", i, "].GetSize", this.Fields[i].Size };
-                    //Console.WriteLine(string.Concat(objArray1));
-                }
+                return false;
             }
-            return (num + this.Lookup.GetSize());
-        }
-
-
-        public void Read(BinaryReader iStream, BDAT_TYPE iType)
-        {
-            this.FieldCount = iStream.ReadUInt32();
-            this.FieldCountUnfixed = this.FieldCount;
-            if (iType == BDAT_TYPE.BDAT_XML) 
-                this.SizeFields = (uint)iStream.ReadUInt64();
-            else
+            if (Lookup == null)
             {
-                this.SizeFields = iStream.ReadUInt32();
+                return newData.lookup == null || newData.lookup.words == null || newData.lookup.words.Length == 0;
             }
-            this.SizeLookup = iStream.ReadUInt32();
-            this.Unknown = iStream.ReadByte();
-            uint num3 = (uint)iStream.BaseStream.Position + this.SizeFields;
-            this.Fields = new BDAT_FIELDTABLE[this.FieldCount];
-            uint index = 0;
-            while (true)
-            {
-                uint num;
-                if (index < this.FieldCount)
-                {
-                    num = (uint)iStream.BaseStream.Position;
-                    object[] objArray1 = new object[] { "VERBOSE_OUT FieldCount:", this.FieldCount, " FieldCountUnfixed:", this.FieldCountUnfixed };
-                    if (num < num3)
-                    {
-                        try
-                        {
-                            this.Fields[index] = new BDAT_FIELDTABLE();
-                            this.Fields[index].Read(iStream, iType); // here <- out of bounds
-                        }
-                        catch { Prompt.Popup("File ID: " + BDat.CurrentFile + " could not be read. Too big. At Index: " + index + " | Field Count: " + FieldCount); /*Prompt.Popup(string.Concat(objArray1));*/ }
-                        index++;
-                        continue;
-                    }
-                    this.FieldCount = index;
-                    try
-                    {
-                            iStream.BaseStream.Position += (num3 - num);
-                    } catch(Exception ex) { MessageBox.Show("CurrentFile: " + BDat.CurrentFile + " | Position: " + iStream.BaseStream.Position + " | Length: " + iStream.BaseStream.Length + Environment.NewLine + ex.ToString()); }
-                }
-                num = (uint)iStream.BaseStream.Position;
-                this.SizePadding = (int)(num3 - num);
-                if (this.SizePadding < 0)
-                {
-                    Prompt.Popup("CRITICAL ERROR: Negative psize of padding bytes");
-                }
-                if (this.SizePadding > 0)
-                {
-                    this.SizePadding = (int)(num3 - num);
-                    this.Padding = iStream.ReadBytes(this.SizePadding);
-                }
-                this.Lookup = new BDAT_LOOKUPTABLE();
-                this.Lookup.Size = this.SizeLookup;
-                this.Lookup.Read(iStream, iType);
-                return;
-            }
-        }
-
-        public void UseChange(BXML_LOOSE newData, bool bIntData)
-        {
-            BXML_FIELDTABLE[] fields = newData.fields;
-            this.FieldCountUnfixed = (uint)fields.Length;
-            this.Fields = new BDAT_FIELDTABLE[fields.Length];
-            int num = 0;
-            for (int i = 0; i < fields.Length; i++)
-            {
-                this.Fields[i] = new BDAT_FIELDTABLE();
-                this.Fields[i].UseChange(fields[i], bIntData);
-                if (this.Fields[i].isEmpty())
-                {
-                    num++;
-                }
-            }
-            this.FieldCount = this.FieldCountUnfixed - ((uint)num);
-            this.Lookup = new BDAT_LOOKUPTABLE();
-            this.SizeLookup = (uint)this.Lookup.UseChange(newData.lookup);
-        }
-
-        public void Write(BinaryWriter oStream, BDAT_TYPE oType)
-        {
-            oStream.Write(this.FieldCountUnfixed);
-            uint pos = (uint)oStream.BaseStream.Position;
-            if (oType == BDAT_TYPE.BDAT_XML) {
-                oStream.Write((ulong)this.SizeFields);
-            }
-            else
-            {
-                oStream.Write(this.SizeFields);
-            }
-            oStream.Write(this.SizeLookup);
-            oStream.Write(this.Unknown);
-            uint num2 = (uint)oStream.BaseStream.Position;
-            for (uint i = 0; i < this.FieldCount; i++)
-            {
-                this.Fields[i].Write(oStream, oType);
-            }
-            if (this.SizePadding < 0)
-            {
-                Prompt.Popup("CRITICAL ERROR: Negative psize of padding bytes");
-            }
-            if (this.SizePadding > 0)
-            {
-                oStream.Write(this.Padding);
-            }
-            this.SizeFields = (uint)oStream.BaseStream.Position - num2;
-            this.Lookup.Size = this.SizeLookup;
-            this.Lookup.Write(oStream, oType);
-            this.SizeLookup = ((uint)oStream.BaseStream.Position - num2) - this.SizeFields;
-            oStream.BaseStream.Seek(pos, SeekOrigin.Begin);
-            oStream.Write(this.SizeFields);
-            oStream.Write(this.SizeLookup);
-            oStream.BaseStream.Seek((1 + this.SizeFields) + this.SizeLookup, SeekOrigin.Current);
+            return Lookup.Compare(newData.lookup) <= 0;
         }
     }
+
     public class BDAT_SUBARCHIVE
     {
-        public uint readStart;
-        public uint readEnd;
-        public uint writeStart;
-        public uint writeEnd;
-        public byte[] Unknown;
-        public ushort SizeCompressed;
-        public ushort SizeDecompressed;
-        public uint FieldLookupCount;
+        public byte[] StartAndEndFieldId;
+
+        public int SizeCompressed;
+
+        public int SizeDecompressed;
+
+        public int FieldLookupCount;
+
         public BDAT_FIELDTABLE[] Fields;
+
         public BDAT_LOOKUPTABLE[] Lookups;
+
+        private BNSDat m_bnsDat = new BNSDat();
+
+        private int m_maxSize;
+
+        public void Read(BinaryReader br)
+        {
+            StartAndEndFieldId = br.ReadBytes(16);
+            SizeCompressed = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            byte[] buffer = br.ReadBytes(SizeCompressed);
+            SizeDecompressed = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            if (SizeDecompressed < 0)
+            {
+                Console.WriteLine("SizeCompressed: " + SizeCompressed + "|SizeDecompressed: " + SizeDecompressed);
+            }
+            byte[] buffer2 = m_bnsDat.Deflate(buffer, SizeCompressed, SizeDecompressed);
+            FieldLookupCount = br.ReadInt32();
+            Fields = new BDAT_FIELDTABLE[FieldLookupCount];
+            Lookups = new BDAT_LOOKUPTABLE[FieldLookupCount];
+            BinaryReader binaryReader = new BinaryReader(new MemoryStream(buffer2));
+            int num = Ultily.ReadIntFrom2Bytes(br.ReadBytes(2));
+            for (int i = 1; i <= FieldLookupCount; i++)
+            {
+                binaryReader.BaseStream.Seek(num, SeekOrigin.Begin);
+                Fields[i - 1] = new BDAT_FIELDTABLE();
+                Fields[i - 1].Read(binaryReader);
+                num = ((i >= FieldLookupCount) ? SizeDecompressed : Ultily.ReadIntFrom2Bytes(br.ReadBytes(2)));
+                Lookups[i - 1] = new BDAT_LOOKUPTABLE();
+                Lookups[i - 1].Size = num - (int)binaryReader.BaseStream.Position;
+                Lookups[i - 1].Read(binaryReader);
+            }
+        }
+
+        /// <summary>Create a new empty block with one Size=0 placeholder field (safe to compress/write).</summary>
+        public static BDAT_SUBARCHIVE CreateEmpty()
+        {
+            return new BDAT_SUBARCHIVE
+            {
+                StartAndEndFieldId = new byte[16],
+                SizeCompressed = 0,
+                SizeDecompressed = 0,
+                FieldLookupCount = 1,
+                Fields = new[]
+                {
+                    new BDAT_FIELDTABLE
+                    {
+                        ID = 0,
+                        Unknown1 = 0,
+                        Unknown2 = 0,
+                        Size = 0,
+                        Data = new byte[0]
+                    }
+                },
+                Lookups = new[]
+                {
+                    new BDAT_LOOKUPTABLE { Size = 0, Data = new byte[0] }
+                }
+            };
+        }
+
+        public void Write(BinaryWriter bw)
+        {
+            if (StartAndEndFieldId == null || StartAndEndFieldId.Length != 16)
+            {
+                StartAndEndFieldId = new byte[16];
+            }
+            if (Fields == null || Fields.Length == 0)
+            {
+                // Avoid empty compressed blocks — keep one placeholder record
+                var empty = CreateEmpty();
+                Fields = empty.Fields;
+                Lookups = empty.Lookups;
+                FieldLookupCount = 1;
+            }
+            if (Lookups == null)
+            {
+                Lookups = new BDAT_LOOKUPTABLE[Fields.Length];
+            }
+            FieldLookupCount = Fields.Length;
+            if (Lookups.Length != FieldLookupCount)
+            {
+                var resized = new BDAT_LOOKUPTABLE[FieldLookupCount];
+                for (int i = 0; i < FieldLookupCount; i++)
+                {
+                    resized[i] = i < Lookups.Length && Lookups[i] != null
+                        ? Lookups[i]
+                        : new BDAT_LOOKUPTABLE { Size = 0, Data = new byte[0] };
+                }
+                Lookups = resized;
+            }
+
+            BinaryWriter binaryWriter = new BinaryWriter(new MemoryStream());
+            int[] array = new int[FieldLookupCount];
+            array[0] = 0;
+            for (int i = 1; i <= FieldLookupCount; i++)
+            {
+                if (Fields[i - 1] == null)
+                {
+                    Fields[i - 1] = new BDAT_FIELDTABLE { Data = new byte[0], Size = 0 };
+                }
+                if (Lookups[i - 1] == null)
+                {
+                    Lookups[i - 1] = new BDAT_LOOKUPTABLE { Size = 0, Data = new byte[0] };
+                }
+                if (Lookups[i - 1].Data == null)
+                {
+                    Lookups[i - 1].Data = new byte[0];
+                    Lookups[i - 1].Size = 0;
+                }
+                Fields[i - 1].Write(binaryWriter);
+                Lookups[i - 1].Write(binaryWriter);
+                if (i < FieldLookupCount)
+                {
+                    array[i] = (int)binaryWriter.BaseStream.Position;
+                }
+                if ((int)binaryWriter.BaseStream.Length < 65535)
+                {
+                    m_maxSize = i;
+                }
+            }
+            SizeDecompressed = (int)binaryWriter.BaseStream.Length;
+            byte[] array2 = ((MemoryStream)binaryWriter.BaseStream).ToArray();
+            int sizeCompressed;
+            byte[] buffer = m_bnsDat.Inflate(array2, SizeDecompressed, out sizeCompressed, 6);
+            SizeCompressed = sizeCompressed;
+            bw.Write(StartAndEndFieldId);
+            bw.Write(Ultily.WriteIntTo2Bytes(SizeCompressed));
+            bw.Write(buffer);
+            bw.Write(Ultily.WriteIntTo2Bytes(SizeDecompressed));
+            bw.Write(FieldLookupCount);
+            for (int j = 0; j < FieldLookupCount; j++)
+            {
+                bw.Write(Ultily.WriteIntTo2Bytes(array[j]));
+            }
+        }
+
+        public void UseChange(BXML_SUBARCHIVE newData)
+        {
+            BXML_FIELDTABLE[] fields = newData.fields;
+            FieldLookupCount = fields.Length;
+            Fields = new BDAT_FIELDTABLE[fields.Length];
+            for (int i = 0; i < fields.Length; i++)
+            {
+                Fields[i] = new BDAT_FIELDTABLE();
+                Fields[i].UseChange(newData.fields[i]);
+            }
+            BXML_LOOKUPTABLE[] lookup = newData.lookup;
+            Lookups = new BDAT_LOOKUPTABLE[lookup.Length];
+            for (int j = 0; j < lookup.Length; j++)
+            {
+                Lookups[j] = new BDAT_LOOKUPTABLE();
+                Lookups[j].UseChange(newData.lookup[j]);
+            }
+        }
 
         public bool Compare(BXML_SUBARCHIVE newData)
         {
-            for (int i = 0; i < this.Lookups.Length; i++)
+            if (newData == null || newData.lookup == null || Lookups == null)
             {
-                if (this.Lookups[i].Compare(newData.lookup[i]) > 0)
+                return false;
+            }
+            int n = Math.Min(Lookups.Length, newData.lookup.Length);
+            for (int i = 0; i < n; i++)
+            {
+                if (Lookups[i] == null)
+                {
+                    continue;
+                }
+                if (Lookups[i].Compare(newData.lookup[i]) > 0)
                 {
                     return false;
                 }
             }
             return true;
-        }
-
-        public int GetSize()
-        {
-            int num = 0;
-            for (int i = 0; i < this.Fields.Length; i++)
-            {
-                num += this.Fields[i].GetSize();
-            }
-            for (int j = 0; j < this.Lookups.Length; j++)
-            {
-                num += this.Lookups[j].GetSize();
-            }
-            return num;
-        }
-
-        public void Read(BinaryReader iStream, BDAT_TYPE iType)
-        {
-            this.Unknown = iStream.ReadBytes(16);
-            this.readStart = (uint)iStream.BaseStream.Position;
-            this.SizeCompressed = iStream.ReadUInt16();
-            byte[] buffer = iStream.ReadBytes(this.SizeCompressed);
-            this.readEnd = (uint)iStream.BaseStream.Position;
-            this.SizeDecompressed = iStream.ReadUInt16();
-            this.FieldLookupCount = iStream.ReadUInt32();
-            this.Fields = new BDAT_FIELDTABLE[this.FieldLookupCount];
-            this.Lookups = new BDAT_LOOKUPTABLE[this.FieldLookupCount];
-            byte[] destinationArray = new byte[this.SizeDecompressed];
-            Array.Copy(bcrypt.Deflate(buffer, this.SizeCompressed, this.SizeDecompressed), 0, destinationArray, 0, this.SizeDecompressed);
-            BinaryReader buffer4 = new BinaryReader(new MemoryStream(destinationArray));
-            ushort pos = iStream.ReadUInt16();
-            for (uint k = 1; k <= this.FieldLookupCount; k++)
-            {
-                buffer4.BaseStream.Position = pos;
-                this.Fields[(int)((IntPtr)(k - 1))] = new BDAT_FIELDTABLE();
-                this.Fields[(int)((IntPtr)(k - 1))].Read(buffer4, iType);
-                pos = (k >= this.FieldLookupCount) ? this.SizeDecompressed : iStream.ReadUInt16();
-                this.Lookups[(int)((IntPtr)(k - 1))] = new BDAT_LOOKUPTABLE();
-                this.Lookups[(int)((IntPtr)(k - 1))].Size = (uint)(pos - buffer4.BaseStream.Position);
-                this.Lookups[(int)((IntPtr)(k - 1))].Read(buffer4, iType);
-            }
-        }
-
-        public void UseChange(BXML_SUBARCHIVE newData, bool bIntData)
-        {
-            BXML_FIELDTABLE[] fields = newData.fields;
-            this.FieldLookupCount = (uint)fields.Length;
-            this.Fields = new BDAT_FIELDTABLE[fields.Length];
-            for (int i = 0; i < fields.Length; i++)
-            {
-                this.Fields[i] = new BDAT_FIELDTABLE();
-                this.Fields[i].UseChange(newData.fields[i], bIntData);
-            }
-            BXML_LOOKUPTABLE[] lookup = newData.lookup;
-            this.Lookups = new BDAT_LOOKUPTABLE[lookup.Length];
-            for (int j = 0; j < lookup.Length; j++)
-            {
-                this.Lookups[j] = new BDAT_LOOKUPTABLE();
-                this.Lookups[j].UseChange(newData.lookup[j]);
-            }
-        }
-
-        public void Write(BinaryWriter oStream, BDAT_TYPE oType)
-        {
-            MemoryStream VirginStream = new MemoryStream();
-            BinaryWriter buffer = new BinaryWriter(VirginStream);
-            ushort[] numArray = new ushort[this.FieldLookupCount];
-            for (uint i = 1; i <= this.FieldLookupCount; i++)
-            {
-                this.Fields[(int)((IntPtr)(i - 1))].Write(buffer, oType);
-                this.Lookups[(int)((IntPtr)(i - 1))].Write(buffer, oType);
-                if (i < this.FieldLookupCount)
-                {
-                    numArray[i] = (ushort)buffer.BaseStream.Position;
-                }
-            }
-            this.SizeDecompressed = (ushort)buffer.BaseStream.Length;
-            if (buffer.BaseStream.Length > 0xffff)
-            {
-                Prompt.Popup("CRITICAL ERROR: Subarchive decompressed size overflow");
-            }
-            byte[] destinationArray = new byte[this.SizeDecompressed];
-            Array.Copy(VirginStream.ToArray(), 0, destinationArray, 0, this.SizeDecompressed);
-            uint sizeCompressed = 0;
-            byte[] buffer4 = bcrypt.Inflate(destinationArray, this.SizeDecompressed, ref sizeCompressed, (uint)BDat.compress_lv);
-            this.SizeCompressed = (ushort)sizeCompressed;
-            oStream.Write(this.Unknown);
-            this.writeStart = (uint)oStream.BaseStream.Position;
-            oStream.Write(this.SizeCompressed);
-            oStream.Write(buffer4);
-            this.writeEnd = (uint)oStream.BaseStream.Position;
-            oStream.Write(this.SizeDecompressed);
-            oStream.Write(this.FieldLookupCount);
-            for (uint m = 0; m < this.FieldLookupCount; m++)
-            {
-                oStream.Write(numArray[m]);
-            }
         }
     }
 }

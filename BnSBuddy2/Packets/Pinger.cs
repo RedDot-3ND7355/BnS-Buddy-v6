@@ -14,24 +14,36 @@ namespace BnSBuddy2.Packets
     public class Pinger
     {
         // Globals
-        string IP = "184.73.104.101";
+        string IP = "18.235.123.165";
         private Stopwatch stopwatch = new Stopwatch();
         Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         BackgroundWorker pingworker = new BackgroundWorker();
         // End Globals
         public void PingRegionChange(string region)
         {
+            if (!Form1.CurrentForm.materialSwitch41.Checked)
+                return;
             Form1.CurrentForm.materialLabel8.Text = "Pinging...";
             Form1.CurrentForm.materialLabel91.Text = "Pinging...";
             if (region == "Europe")
-                IP = "18.194.180.254";
+                if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
+                    IP = "3.75.38.202";
+                else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                    IP = "3.123.89.191";
             if (region == "North America")
-                IP = "184.73.104.101";
+                if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Live")
+                    IP = "18.235.123.165";
+                else if (Form1.CurrentForm.materialComboBox4.SelectedItem.ToString() == "Neo")
+                    IP = "15.197.135.118";
             if (region == "Taiwan")
-                IP = "203.67.68.227";
+                IP = "210.242.83.163";
             if (region == "Japanese")
                 IP = "106.186.46.101";
-            if (region == "Korean")
+            if (region == "Korean Live") // todo
+                IP = "222.122.231.3";
+            if (region == "Korean Neo") // todo
+                IP = "222.122.231.3";
+            if (region == "Korean Test") // todo
                 IP = "222.122.231.3";
             if (region == "Russia")
                 IP = "109.105.133.64";
@@ -41,6 +53,10 @@ namespace BnSBuddy2.Packets
                 IP = "51.195.57.237";
             if (region == "Garena")
                 IP = "0";
+            if (region == "Steam NA")
+                IP = "0"; // todo: add Steam IPs
+            if (region == "Steam EU")
+                IP = "0"; // todo: add Steam IPs
         }
         public void PingStatus(string ping)
         {
@@ -109,7 +125,8 @@ namespace BnSBuddy2.Packets
 
         public void StopPinger()
         {
-            pingworker.CancelAsync();
+            if (pingworker != null && pingworker.IsBusy)
+                pingworker.CancelAsync();
             Form1.CurrentForm.materialLabel8.Text = "Offline";
             Form1.CurrentForm.materialLabel91.Text = "Offline";
         }

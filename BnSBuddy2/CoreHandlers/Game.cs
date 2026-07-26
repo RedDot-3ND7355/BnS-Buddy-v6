@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace BnSBuddy2.CoreHandlers
@@ -106,28 +108,40 @@ namespace BnSBuddy2.CoreHandlers
                 {
                     Form1.CurrentForm.AddLauncherLog("Applying Addons...");
                     Addons.StartGameAddons();
+                    Form1.CurrentForm.AddLauncherLog("Applied Addons");
                 }
                 bool Started = false;
                 // Login & start by region
-                if (region == "North America" || region == "Europe" || region == "Korean" || region == "Korean Test" || region == "Taiwan")
+                if (region == "North America" || region == "Europe" || region == "Korean" || region == "Taiwan" || region == "Japanese" || region == "Steam NA" || region == "Steam EU")
                 {
-                    Form1.CurrentForm.AddLauncherLog("Starting Auth...");
-                    switch (Form1.CurrentForm.NCHandler.GetLogin(username, password, region)) // Check Maintenance & Get Login
+                    string result = "";
+                    if (!region.Contains("Steam"))
                     {
-                        case "Logged":
-                            Form1.CurrentForm.Show();
-                            break;
-                        case "Maintenance":
-                            Form1.CurrentForm.PlayButton.Enabled = true;
-                            Form1.CurrentForm.AddLauncherLog("Cancelled");
-                            break;
-                        default:
-                            Form1.CurrentForm.PlayButton.Enabled = true;
-                            Form1.CurrentForm.AddLauncherLog("Login Failed" + Environment.NewLine + "Cancelled");
-                            break;
+                        Form1.CurrentForm.AddLauncherLog("Starting Auth...");
+                        result = Form1.CurrentForm.NCHandler.GetLogin(username, password, region);
                     }
+                    else
+                    {
+                        Task.Delay(0).ContinueWith(delegate { Control.CheckForIllegalCrossThreadCalls = false; Form1.CurrentForm.NCHandler.login_enable(); Form1.CurrentForm.PlayButton.Enabled = true; });
+                        result = "Logged"; // Steam does not require login
+                    }
+                    switch (result) // Check Maintenance & Get Login
+                        {
+                            case "Logged":
+                                Form1.CurrentForm.Show();
+                                break;
+                            case "Maintenance":
+                                Form1.CurrentForm.PlayButton.Enabled = true;
+                                Form1.CurrentForm.AddLauncherLog("Cancelled");
+                                break;
+                            default:
+                                Form1.CurrentForm.PlayButton.Enabled = true;
+                                Form1.CurrentForm.AddLauncherLog("Login Failed | Cancelled " + Environment.NewLine + "Reason: " + result);
+                                break;
+                        }
                 }
                 // Start Japanese Client
+                /*
                 else if (region == "Japanese")
                 {
                     Form1.CurrentForm.AddLauncherLog("Starting Client!");
@@ -159,7 +173,9 @@ namespace BnSBuddy2.CoreHandlers
                         Form1.CurrentForm.AddLauncherLog($"[Error] Could Not Start {Path.GetFileName(PathToExe)}!");
                     }
                 }
+                */
                 // Other unsupported Clients
+                /*
                 else
                 {
                     Form1.CurrentForm.AddLauncherLog("Starting Client!");
@@ -181,7 +197,7 @@ namespace BnSBuddy2.CoreHandlers
                             Form1.CurrentForm.AddLauncherLog("Started " + Path.GetFileName(PathToExe) + "!");
                             gamesessionid = process2.Id;
                             Started = true;
-                            Form1.CurrentForm.AddLauncherLog("Notice: BnS Buddy does directly support Multiclient for this server!");
+                            Form1.CurrentForm.AddLauncherLog("Notice: BnS Buddy does not directly support Multiclient for this server!");
                             Form1.CurrentForm.WindowState = FormWindowState.Minimized;
                         }
                     }
@@ -192,12 +208,14 @@ namespace BnSBuddy2.CoreHandlers
                         Form1.CurrentForm.AddLauncherLog($"[Error] Could Not Start {Path.GetFileName(PathToExe)}!");
                     }
                 }
+                */
                 if (Started && Form1.CurrentForm.materialSwitch52.Checked)
                 {
                     Form1.CurrentForm.PlayButton.Text = "Kill Game";
                     if (Form1.CurrentForm.materialLabel33.Text == "Active")
                         Form1.CurrentForm.materialButton2.Enabled = true;
-                    Form1.CurrentForm.MemoryCleaner.CleanMem();
+                  
+                Form1.CurrentForm.MemoryCleaner.CleanMem();
                 }
             }
             else

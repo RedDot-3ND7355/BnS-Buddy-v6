@@ -13,6 +13,7 @@ namespace BnSBuddy2.Functions
         {
             _IsCounters();
         }
+
         public bool IsCounters
         {
             get;

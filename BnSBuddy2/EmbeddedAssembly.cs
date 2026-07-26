@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Windows.Forms;
 
 public class EmbeddedAssembly
 {
@@ -16,9 +17,11 @@ public class EmbeddedAssembly
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ZippedFile);
             using (System.IO.Compression.ZipArchive z = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Read))
             {
-                MemoryStream TempArrray = new MemoryStream();
-                z.Entries[0].Open().CopyTo(TempArrray);
-                return TempArrray.ToArray();
+                using (MemoryStream TempArrray = new MemoryStream())
+                {
+                    z.Entries[0].Open().CopyTo(TempArrray);
+                    return TempArrray.ToArray();
+                }
             }
         } 
         else
@@ -54,7 +57,10 @@ public class EmbeddedAssembly
             try
             {
                 if (fileName == "bnscompression.dll")
+                {
+                    File.WriteAllBytes(Path.GetTempPath() + "\\bnscompression.dll", array);
                     LoadLibrary(Path.GetTempPath() + "\\bnscompression.dll");
+                }
                 else
                 {
                     assembly = Assembly.Load(array);

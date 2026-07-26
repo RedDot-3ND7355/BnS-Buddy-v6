@@ -16,6 +16,12 @@ namespace BnSBuddy2.Pilao
         public static void SaveFile()
         {
             Form1.CurrentForm.SortOutputHandler("Saving...");
+            if (Form1.CurrentForm.treeView1.SelectedNode.FullPath.Contains("64.bin.files"))
+            {
+                File.WriteAllText(Path.GetTempPath() + Form1.CurrentForm.treeView1.SelectedNode.FullPath, Form1.CurrentForm.fastColoredTextBox1.Text, Encoding.UTF8);
+                Form1.CurrentForm.SortOutputHandler("Saved!");
+                return;
+            }
             string SelectedDat = PAK.PakHandler.FileList[Form1.CurrentForm.materialComboBox5.SelectedItem.ToString()];
             DatHandler.DetectSettings(SelectedDat);
             string filename = Form1.CurrentForm.treeView1.SelectedNode.FullPath.Replace(Path.GetFileName(SelectedDat) + "\\", "");

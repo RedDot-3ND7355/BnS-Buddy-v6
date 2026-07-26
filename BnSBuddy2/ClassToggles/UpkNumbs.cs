@@ -15,169 +15,131 @@ namespace BnSBuddy2.ClassToggles
             {
                 // BM
                 _List = new List<string>();
-                _List.Add("00013263");
-                _List.Add("00060548");
+                _List.Add("Mod_Remove_SwordMaster_05_SF_p");
                 Effects.Add("Blade Master", _List);
                 // KFM
                 _List = new List<string>();
-                _List.Add("00010771");
-                _List.Add("00060549");
-                _List.Add("00064821");
+                _List.Add("Mod_Remove_KungfuFighter_05_SF_p");
                 Effects.Add("Kung-Fu Master", _List);
                 // FM
                 _List = new List<string>();
-                _List.Add("00009801");
-                _List.Add("00060550");
-                _List.Add("00072638");
+                _List.Add("Mod_Remove_ForceMaster_05_SF_p");
                 Effects.Add("Force Master", _List);
                 // DES
                 _List = new List<string>();
-                _List.Add("00008841");
-                _List.Add("00060551");
-                _List.Add("00067307");
+                _List.Add("Mod_Remove_Destroyer_05_SF_p");
                 Effects.Add("Destroyer", _List);
                 // GS
                 _List = new List<string>();
-                _List.Add("00007307");
-                _List.Add("00060552");
+                _List.Add("Mod_Remove_Shooter_05_SF_p");
                 Effects.Add("Gunslinger", _List);
                 // ASS
                 _List = new List<string>();
-                _List.Add("00010504");
-                _List.Add("00060553");
+                _List.Add("Mod_Remove_Assassin_05_SF_p");
                 Effects.Add("Assassin", _List);
                 // SUM
                 _List = new List<string>();
-                _List.Add("00006660");
-                _List.Add("00060554");
-                _List.Add("00080169");
+                _List.Add("Mod_Remove_Summoner_05_SF_p");
                 Effects.Add("Summoner", _List);
                 // BD
                 _List = new List<string>();
-                _List.Add("00031769");
-                _List.Add("00060555");
-                _List.Add("00072644");
-                _List.Add("00072646");
+                _List.Add("Mod_Remove_Fencer_05_SF_p");
                 Effects.Add("Blade Dancer", _List);
                 // WL
                 _List = new List<string>();
-                _List.Add("00023411");
-                _List.Add("00023412");
-                _List.Add("00060556");
+                _List.Add("Mod_Remove_Warlock_05_SF_p");
                 Effects.Add("Warlock", _List);
                 // SF
                 _List = new List<string>();
-                _List.Add("00034433");
-                _List.Add("00060557");
+                _List.Add("Mod_Remove_SoulFighter_05_SF_p");
                 Effects.Add("Soul Fighter", _List);
                 // WD
                 _List = new List<string>();
-                _List.Add("00056127");
-                _List.Add("00060558");
+                _List.Add("Mod_Remove_Warrior_05_SF_p");
                 Effects.Add("Warden", _List);
                 // AR
                 _List = new List<string>();
-                _List.Add("00064738");
+                _List.Add("Mod_Remove_Archer_05_SF_p");
                 Effects.Add("Archer", _List);
                 // AS
                 _List = new List<string>();
-                _List.Add("00072639");
-                _List.Add("00072642");
+                _List.Add("Mod_Remove_Thunderder_05_SF_p");
                 Effects.Add("Astromancer", _List);
+                // DUAL BLADE
+                _List = new List<string>();
+                _List.Add("Mod_Remove_Dualblade_05_SF_p");
+                Effects.Add("Dual Blade", _List);
                 // Extras
                 _List = new List<string>();
-                _List.Add("00003814");
-                _List.Add("00007242");
-                _List.Add("00008904");
-                _List.Add("00009393");
-                _List.Add("00009812");
-                _List.Add("00010354");
-                _List.Add("00010772");
-                _List.Add("00010869");
-                _List.Add("00011949");
-                _List.Add("00012009");
-                _List.Add("00024690");
-                _List.Add("00026129");
-                _List.Add("00059534");
-                _List.Add("00060729");
-                _List.Add("00069254");
+                _List.Add("Mod_Remove_GemEffects_p");
+                _List.Add("Mod_Remove_Bracelet_Effect_p");
+                _List.Add("Mod_Remove_Heart_Effect_p");
+                _List.Add("Mod_Remove_Soul_Effect_p");
+                _List.Add("Mod_Remove_Talisman_Effect_p");
+                _List.Add("Mod_Remove_Gunner_MysticBadge_p");
+                _List.Add("Mod_Remove_Unity_Effect_p");
                 Effects.Add("Extras", _List);
             }
             if (Animations.Count == 0)
             {
                 // BM
                 List<string> _List = new List<string>();
-                _List.Add("00007911");
-                _List.Add("00056567");
+                _List.Add("Mod_Remove_SwordMaster_Animset_p");
                 Animations.Add("Blade Master", _List);
                 // KFM
                 _List = new List<string>();
-                _List.Add("00007912");
-                _List.Add("00056568");
-                _List.Add("00064820");
+                _List.Add("Mod_Remove_KungfuFighter_Animset_p");
                 Animations.Add("Kung-Fu Master", _List);
                 // FM
                 _List = new List<string>();
-                _List.Add("00007913");
-                _List.Add("00056569");
-                _List.Add("00068626");
-                _List.Add("00068628");
+                _List.Add("Mod_Remove_ForceMaster_Animset_p");
                 Animations.Add("Force Master", _List);
                 // DES
                 _List = new List<string>();
-                _List.Add("00007914");
-                _List.Add("00056570");
+                _List.Add("Mod_Remove_Destroyer_Animset_p");
                 Animations.Add("Destroyer", _List);
                 // GS
                 _List = new List<string>();
-                _List.Add("00007915");
-                _List.Add("00056571");
+                _List.Add("Mod_Remove_Shooter_Animset_p");
                 Animations.Add("Gunslinger", _List);
                 // ASS
                 _List = new List<string>();
-                _List.Add("00007916");
-                _List.Add("00056572");
-                _List.Add("00068516");
+                _List.Add("Mod_Remove_Assassin_Animset_p");
                 Animations.Add("Assassin", _List);
                 // SUM
                 _List = new List<string>();
-                _List.Add("00007917");
-                _List.Add("00056573");
-                _List.Add("00080266");
+                _List.Add("Mod_Remove_Summoner_Animset_p");
+                _List.Add("Mod_Remove_Summon_Animset_p");
                 Animations.Add("Summoner", _List);
                 // BD
                 _List = new List<string>();
-                _List.Add("00018601");
-                _List.Add("00056574");
-                _List.Add("00078303");
-                _List.Add("00078533");
+                _List.Add("Mod_Remove_Fencer_Animset_p");
                 Animations.Add("Blade Dancer", _List);
                 // WL
                 _List = new List<string>();
-                _List.Add("00023439");
-                _List.Add("00056575");
+                _List.Add("Mod_Remove_Warlock_Animset_p");
                 Animations.Add("Warlock", _List);
                 // SF
                 _List = new List<string>();
-                _List.Add("00034408");
-                _List.Add("00056576");
+                _List.Add("Mod_Remove_Soulfighter_Animset_p");
                 Animations.Add("Soul Fighter", _List);
                 // WD
                 _List = new List<string>();
-                _List.Add("00056126");
-                _List.Add("00056566");
-                _List.Add("00056577");
+                _List.Add("Mod_Remove_Warrior_Animset_p");
                 Animations.Add("Warden", _List);
                 // AR
                 _List = new List<string>();
-                _List.Add("00064736");
+                _List.Add("Mod_Remove_Archer_Animset_p");
                 Animations.Add("Archer", _List);
                 // AS
                 _List = new List<string>();
-                _List.Add("00069237");
-                _List.Add("00069238");
-                _List.Add("00076159");
+                _List.Add("Mod_Remove_Thunderer_Animset_p");
                 Animations.Add("Astromancer", _List);
+                // DUAL BLADE
+                _List = new List<string>();
+                _List.Add("Mod_Remove_DualBlade_Animset_p");
+                _List.Add("Mod_Remove_DualBlader_Animset_p");
+                Animations.Add("Dual Blade", _List);
             }
             if (Classes_Toggles.Count == 0) {
                 Classes_Toggles.Add("Animations", Animations);

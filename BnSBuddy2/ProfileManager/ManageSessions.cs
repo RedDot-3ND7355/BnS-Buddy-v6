@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -118,13 +117,21 @@ namespace BnSBuddy2.ProfileManager
                 foreach (MaterialListBoxItem selected in materialListBox1.SelectedItems.Cast<Object>().ToList())
                     if (Form1.CurrentForm.ActiveSessions.Verify(Identifyer[selected.Text]))
                     {
-                        ToRemove.Add(selected);
                         Process.GetProcessById(Identifyer[selected.Text]).Kill();
+                        ToRemove.Add(selected);
                     }
                     else
                         ToRemove.Add(selected);
+            else if (materialListBox1.SelectedItem != null)
+                if (Form1.CurrentForm.ActiveSessions.Verify(Identifyer[materialListBox1.SelectedItem.Text]))
+                {
+                    Process.GetProcessById(Identifyer[materialListBox1.SelectedItem.Text]).Kill();
+                    ToRemove.Add(materialListBox1.SelectedItem);
+                }
+                else
+                    ToRemove.Add(materialListBox1.SelectedItem);
             foreach (MaterialListBoxItem session in ToRemove)
-                materialListBox1.Items.Remove(session);
+                    materialListBox1.Items.Remove(session);
             Form1.CurrentForm.ActiveSessions.ClearInactiveClients();
         }
     }

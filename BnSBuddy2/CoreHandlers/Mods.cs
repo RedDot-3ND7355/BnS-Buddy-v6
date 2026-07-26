@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
+using System.Xml;
 
 namespace BnSBuddy2.CoreHandlers
 {
@@ -47,6 +48,7 @@ namespace BnSBuddy2.CoreHandlers
         public void AfterSelect(string FolderName)
         {
             Form1.CurrentForm.materialButton32.Visible = true;
+            Form1.CurrentForm.materialButton32.Enabled = true;
             string PathToFolderName = Form1.CurrentForm.PakPaths.YourModsPath + FolderName;
             if (File.Exists(PathToFolderName + "\\description.txt"))
                 Form1.CurrentForm.materialLabel43.Text = $"Description: {File.ReadAllText(PathToFolderName + "\\description.txt")}";
@@ -148,9 +150,9 @@ namespace BnSBuddy2.CoreHandlers
             foreach (TreeNode Node in Form1.CurrentForm.treeView2.Nodes)
             {
                 // Parent
-                if (Node.Checked && Node.Text.Contains(" (Installed)") && !_Install)
+                if (Node.Checked && Node.Text.Contains(" (Installed)") && !_Install && Node.Nodes.Count == 0)
                     Queue.Add(Node);
-                else if (Node.Checked && !Node.Text.Contains(" (Installed)") && _Install)
+                else if (Node.Checked && !Node.Text.Contains(" (Installed)") && _Install && Node.Nodes.Count == 0)
                     Queue.Add(Node);
                 // Child
                 if (Node.Nodes.Count > 0)
@@ -191,11 +193,28 @@ namespace BnSBuddy2.CoreHandlers
                 Form1.CurrentForm.materialProgressBar2.Value = 0;
         }
 
+        private void CopyFilesRecursively(string sourcePath, string targetPath)
+        {
+            Directory.CreateDirectory(targetPath);
+            //Copy all the files & Replaces any files with the same name
+            DirectoryInfo directoryInfo = new DirectoryInfo(sourcePath);
+            FileInfo[] pak = directoryInfo.GetFiles("*.pak");
+            FileInfo[] sig = directoryInfo.GetFiles("*.sig");
+            FileInfo[] files = pak.Concat(sig).ToArray();
+            foreach (FileInfo newPath in files)
+                File.Copy(newPath.FullName, targetPath + "\\" + newPath.Name, true);
+        }
+
         // Install Mod by Folder
         private void Install(string FolderName)
         {
             string DestinationFolder = Form1.CurrentForm.PakPaths.ModsPath;
             string OriginalLocation = Form1.CurrentForm.PakPaths.YourModsPath;
+            if (!Directory.Exists(OriginalLocation + FolderName))
+            {
+                Form1.CurrentForm.AddModManLogs($"[Error] {FolderName} [modded] does not exist!");
+                return;
+            }    
             DirectoryInfo directoryInfo = new DirectoryInfo(OriginalLocation + FolderName);
             FileInfo[] pak = directoryInfo.GetFiles("*.pak");
             FileInfo[] sig = directoryInfo.GetFiles("*.sig");
@@ -204,52 +223,50 @@ namespace BnSBuddy2.CoreHandlers
             if (files.Length != 0)
             {
                 Form1.CurrentForm.materialProgressBar2.Value = 0;
-                foreach (FileInfo file in files)
+                Control.CheckForIllegalCrossThreadCalls = false;
+                Form1.CurrentForm.AddModManLogs("");
+                try
                 {
-                    Form1.CurrentForm.materialProgressBar2.Maximum = files.Length;
-                    Form1.CurrentForm.materialProgressBar2.PerformStep();
-                    Form1.CurrentForm.materialProgressBar2.Refresh();
-                    string FileName = file.Name.Split(Path.DirectorySeparatorChar).Last();
-                    Control.CheckForIllegalCrossThreadCalls = false;
-                    Form1.CurrentForm.AddModManLogs("");
-                    try
+                    bool isparent = CheckIfParent(FolderName);
+                    if (isparent)
+                        Directory.CreateDirectory(DestinationFolder + Directory.GetParent(FolderName).Name);
+                    Form1.CurrentForm.AddModManLogs($"[Linking] {FolderName} [folder] at Pak/Mods");
+                    if (!Directory.Exists(DestinationFolder + FolderName))
                     {
-                        if (File.Exists(file.FullName))
+                        if (!CreateSymbolicLink(DestinationFolder + FolderName, OriginalLocation + FolderName, SymbolicLink.Directory))
                         {
-                            Form1.CurrentForm.AddModManLogs($"[Creating] {FolderName} [folder] at Pak/Mods");
-                            if (!Directory.Exists(DestinationFolder + FolderName))
-                            {
-                                Directory.CreateDirectory(DestinationFolder + FolderName);
-                                Form1.CurrentForm.AddModManLogs($"[Created] {FolderName} [folder] at Pak/Mods");
-                                Form1.CurrentForm.AddModManLogs($"[Linking] {FileName} [modded] to Pak/Mods");
-                                if (!CreateSymbolicLink(DestinationFolder + FolderName + "\\" + FileName, file.FullName, SymbolicLink.File))
-                                {
-                                    Form1.CurrentForm.AddModManLogs($"[Failed] {FileName} could not be linked!");
-                                    Form1.CurrentForm.AddModManLogs($"[Copying] {FileName} [modded] to Pak/Mods");
-                                    File.Copy(file.FullName, DestinationFolder + FolderName + "\\" + FileName, true);
-                                    Form1.CurrentForm.AddModManLogs($"[Copied] {FileName} [modded] to Pak/Mods");
-                                }
-                                else
-                                    Form1.CurrentForm.AddModManLogs($"[Linked] {FileName} [modded] to Pak/Mods");
-                            }
-                            else
-                                Form1.CurrentForm.AddModManLogs($"[Info] {FolderName} already installed!");
+                            Form1.CurrentForm.AddModManLogs($"[Failed Linking] {FolderName} [modded] copying instead");
+                            Form1.CurrentForm.AddModManLogs($"[Copying] {FolderName} [modded] to Pak/Mods");
+                            CopyFilesRecursively(OriginalLocation + FolderName, DestinationFolder + FolderName);
+                            Form1.CurrentForm.AddModManLogs($"[Copied] {FolderName} [modded] to Pak/Mods");
                         }
+                        else
+                            Form1.CurrentForm.AddModManLogs($"[Linked] {FolderName} [modded] to Pak/Mods");
+                        num++;
+                        bw_ProgressChangedV2();
                     }
-                    catch
-                    {
-                        Form1.CurrentForm.AddModManLogs($"[Error] {FileName} could not be touched!");
-                    }
-                    num++;
-                    bw_ProgressChangedV2();
+                    else
+                        Form1.CurrentForm.AddModManLogs($"[Info] {FolderName} already installed!");
+                }
+                catch
+                {
+                    Form1.CurrentForm.AddModManLogs($"[Error] {FolderName} could not be touched!");
                 }
                 if (num > 0)
-                    Form1.CurrentForm.AddModManLogs($"[Log] Done! {num} files were linked.");
+                    Form1.CurrentForm.AddModManLogs($"[Log] Done! {num} directory were linked.");
                 else
-                    Form1.CurrentForm.AddModManLogs("[Log] Done! No files were linked.");
+                    Form1.CurrentForm.AddModManLogs("[Log] Done! No directory were linked.");
             }
             else
                 Form1.CurrentForm.AddModManLogs("[Notice] Can't install an empty mod folder");
+        }
+
+        private bool CheckIfParent(string path)
+        {
+            if (Path.GetDirectoryName(path) != path)
+                return true;
+            else
+                return false;
         }
 
         // Uninstall Mod by Folder
@@ -264,6 +281,8 @@ namespace BnSBuddy2.CoreHandlers
                 {
                     Form1.CurrentForm.AddModManLogs($"[Removing] {FolderName} [modded] from Pak/Mods");
                     Directory.Delete(PakModsFolder, true);
+                    if (Directory.GetParent(PakModsFolder).GetFiles("*.*", SearchOption.AllDirectories).Length == 0)
+                        Directory.GetParent(PakModsFolder).Delete();
                     Form1.CurrentForm.AddModManLogs($"[Removed] {FolderName} [modded] from Pak/Mods");
                 }
             }

@@ -77,6 +77,11 @@ namespace BnSBuddy2.ClassToggles
                 ToggleNum.Add(Form1.CurrentForm.materialSwitch18);
                 ToggleNum.Add(Form1.CurrentForm.materialSwitch7);
                 MetroToggle.Add("Astromancer", ToggleNum);
+                // DUAL BLADE
+                ToggleNum = new List<MaterialSwitch>();
+                ToggleNum.Add(Form1.CurrentForm.materialSwitch60);
+                ToggleNum.Add(Form1.CurrentForm.materialSwitch61);
+                MetroToggle.Add("Dual Blade", ToggleNum);
                 // EXTRAS
                 ToggleNum = new List<MaterialSwitch>();
                 ToggleNum.Add(null);

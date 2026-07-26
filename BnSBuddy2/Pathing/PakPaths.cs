@@ -1,4 +1,5 @@
 ﻿using BnSBuddy2.Functions;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -15,24 +16,39 @@ namespace BnSBuddy2.Pathing
         // End Globals
 
         // Return Pak Folder Path & Set globals
-        public void ReturnPakPath(string region)
+        public void ReturnPakPath(object region)
         {
-            region = RegionConvert.Convert(region);
+            if (region == null)
+                return;
+            region = RegionConvert.Convert(region.ToString());
             YourModsPath = Form1.CurrentForm.AppPath + "\\Mods\\";
             if (!Directory.Exists(YourModsPath))
                 Directory.CreateDirectory(YourModsPath);
-            ModsPath = Form1.CurrentForm.ClientPaths.Installs[region] + "BNSR\\Content\\Paks\\Mods\\";
+            ModsPath = Form1.CurrentForm.ClientPaths.Installs[region.ToString()] + "BNSR\\Content\\Paks\\Mods\\";
             if (!Directory.Exists(ModsPath))
                 Directory.CreateDirectory(ModsPath);
-            PakPath = Form1.CurrentForm.ClientPaths.Installs[region] + "BNSR\\Content\\Paks\\";
-            FindLocalPath(region);
+            PakPath = Form1.CurrentForm.ClientPaths.Installs[region.ToString()] + "BNSR\\Content\\Paks\\";
+            FindLocalPath(region.ToString());
             GenerateTree();
             VerifyInstalledMods();
+            VerifyPakIntegrity();
+        }
+
+        private void VerifyPakIntegrity()
+        {
+            FileInfo fileMod = new FileInfo(ModsPath + "Pak0-Local_p.pak");
+            FileInfo fileOrig = new FileInfo(PakPath + "Pak0-Local.pak");
+            if (fileMod.CreationTime.Date < fileOrig.CreationTime.Date)
+            {
+                fileMod.Delete();
+                File.Delete(ModsPath + "Pak0-Local_p.sig");
+            }
         }
 
         // Find Local Dat Path 
         private void FindLocalPath(string region)
         {
+            if (!Directory.Exists(Form1.CurrentForm.ClientPaths.Installs[region] + "BNSR\\Content\\local")) return;
             foreach (DirectoryInfo directory in new DirectoryInfo(Form1.CurrentForm.ClientPaths.Installs[region] + "BNSR\\Content\\local").GetDirectories())
                 if (Directory.Exists(directory.FullName + "\\" + Form1.CurrentForm.materialComboBox3.SelectedItem.ToString() + "\\data"))
                     LocalDatPath = directory.FullName + "\\" + Form1.CurrentForm.materialComboBox3.SelectedItem.ToString() + "\\data";
@@ -63,6 +79,8 @@ namespace BnSBuddy2.Pathing
                 Form1.CurrentForm.treeView2.Nodes.Add(node);
             }
             Form1.CurrentForm.treeView2.EndUpdate();
+            if (Form1.CurrentForm.AppStarted)
+                VerifyInstalledMods();
         }
 
         // Verify Installed Mods

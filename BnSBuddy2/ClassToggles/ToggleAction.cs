@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using BnSBuddy2.Functions;
+﻿using BnSBuddy2.Properties;
 using MaterialSkin.Controls;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
 
 namespace BnSBuddy2.ClassToggles
 {
@@ -10,28 +12,36 @@ namespace BnSBuddy2.ClassToggles
         private Dictionary<string, Dictionary<string, List<string>>> ClassUpks = Form1.CurrentForm.StartupToggles._UpkNumbs.Classes_Toggles;
         private Dictionary<string, List<MaterialSwitch>> MetroToggles = Form1.CurrentForm.StartupToggles._TogglesHandler.MetroToggle;
         private Dictionary<string, List<MaterialButton>> MetroButtons = Form1.CurrentForm.StartupToggles._ButtonsHandler.MetroButton;
-        private string RegPath = "";
-        private string AppPath = Form1.CurrentForm.AppPath;
 
-        public ToggleAction(string region)
+        public void _ToggleAction(string ClassName, string Type, MaterialSwitch control)
         {
-            region = RegionConvert.Convert(region);
-            RegPath = Form1.CurrentForm.ClientPaths.Installs[region];
-        }
-
-        public void _ToggleAction(string ClassName, string Type, bool toggle = false)
-        {
+            if (!Form1.CurrentForm.AppStarted)
+                return;
+            bool toggle = !control.Checked;
             foreach (string Upk_name in ClassUpks[Type][ClassName])
             {
-                string name = Upk_name + ".upk";
-                string Backup = toggle ? RegPath + "\\contents\\bns\\CookedPC\\" : AppPath + "\\backup\\";
-                string Game = toggle ? AppPath + "\\backup\\" : RegPath + "\\contents\\bns\\CookedPC\\";
-                if (File.Exists(Game + name))
+                List<string> filestoextract = new List<string>();
+                filestoextract.Add(Upk_name + ".pak");
+                filestoextract.Add(Upk_name + ".sig");
+                string ModPakPath = Form1.CurrentForm.PakPaths.ModsPath;
+                if (File.Exists(ModPakPath + Upk_name + ".pak") && !toggle)
                 {
-                    File.Copy(Game + name, Backup + name, overwrite: true);
-                    File.Delete(Game + name);
+                    File.Delete(ModPakPath + Upk_name + ".pak");
+                    File.Delete(ModPakPath + Upk_name + ".sig");
                 }
+                else
+                    InstallPakFilesFile(ModPakPath, filestoextract);
             }
+        }
+
+        private void InstallPakFilesFile(string modPakPath, List<string> filestoextract)
+        {
+            MemoryStream stream = new MemoryStream(Resources.Removes);
+            using (ZipArchive archive = new ZipArchive(stream))
+                foreach (string file in filestoextract)
+                    foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains(file)))
+                        using (Stream s = new FileStream(modPakPath + entry.FullName, FileMode.Create))
+                            entry.Open().CopyTo(s);
         }
 
         int POS = 0;

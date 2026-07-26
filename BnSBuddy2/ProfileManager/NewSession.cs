@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -70,8 +69,12 @@ namespace BnSBuddy2.ProfileManager
                 Prompt.Popup("Please select another user that is not active.");
             else
             {
+                string region = Form1.CurrentForm.materialComboBox2.SelectedItem.ToString();
                 var user = new functions().GetInfo(Identify[materialComboBox2.SelectedItem.ToString()]);
-                Form1.CurrentForm.Game.PlayGame(false, user[Identify[materialComboBox2.SelectedItem.ToString()]][0], user[Identify[materialComboBox2.SelectedItem.ToString()]][1]);
+                if (!Form1.CurrentForm.materialSwitch62.Checked)
+                    Form1.CurrentForm.Game.PlayGame(false, user[Identify[materialComboBox2.SelectedItem.ToString()]][0], user[Identify[materialComboBox2.SelectedItem.ToString()]][1], region);
+                else
+                    Form1.CurrentForm.Game.PlayGame(false, "", "", region);
                 DialogResult = DialogResult.OK;
                 Close();
             }

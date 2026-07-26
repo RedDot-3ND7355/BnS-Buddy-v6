@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using Microsoft.VisualBasic.FileIO;
+using System.IO;
 
 namespace BnSBuddy2.Functions
 {
@@ -6,14 +7,29 @@ namespace BnSBuddy2.Functions
     {
         private static string PathToMovies = "";
         private static string PathToLoadingScreenLang = "";
+        private static string PathToLoadingScreenStatic = "";
 
-        public static void CheckState(string region, string language)
+        public static void CheckState(object region, object language)
         {
-            region = RegionConvert.Convert(region);
-            PathToMovies = RecursiveFindMovies(region);
-            PathToLoadingScreenLang = RecursiveFindLoading(region, language);
-            if (CheckMovieState(PathToMovies) && CheckLoadingScreenState(PathToLoadingScreenLang))
+            if (region == null || language == null)
+                return;
+            region = RegionConvert.Convert(region.ToString());
+            PathToMovies = RecursiveFindMovies(region.ToString());
+            PathToLoadingScreenLang = RecursiveFindLoading(region.ToString(), language.ToString());
+            PathToLoadingScreenStatic = RecursiveFindStaticLoading(region.ToString());
+            bool Movies = CheckMovieState(PathToMovies);
+            bool Loading1 = CheckLoadingScreenState(PathToLoadingScreenLang);
+            bool Loading2 = (PathToLoadingScreenStatic != "" ? CheckLoadingScreenState(PathToLoadingScreenStatic) : true);
+            if (Movies && Loading1 && Loading2)
                 Form1.CurrentForm.materialSwitch1.Checked = true;
+        }
+
+        private static string RecursiveFindStaticLoading(string region)
+        {
+            if (Directory.Exists(Form1.CurrentForm.ClientPaths.Installs[region] + "BNSR\\Content\\local\\ZNCS\\Public"))
+                return Form1.CurrentForm.ClientPaths.Installs[region] + "BNSR\\Content\\local\\ZNCS\\Public";
+            else
+                return "";
         }
 
         private static string RecursiveFindMovies(string region)
@@ -23,6 +39,7 @@ namespace BnSBuddy2.Functions
 
         private static string RecursiveFindLoading(string region, string language)
         {
+
             string ClientPath = Form1.CurrentForm.ClientPaths.Installs[region];
             if (Directory.Exists(ClientPath + "BNSR\\Content\\LoadingImage") || Directory.Exists(ClientPath + "BNSR\\Content\\_LoadingImage")) // KR Support
                 return ClientPath + "BNSR\\Content";
@@ -39,6 +56,8 @@ namespace BnSBuddy2.Functions
         {
             ToggleMovie(enableboost, PathToMovies);
             ToggleLoading(enableboost, PathToLoadingScreenLang);
+            if (PathToLoadingScreenStatic != "")
+                ToggleLoading(enableboost, PathToLoadingScreenStatic);
         }
 
         // Toggle Movie
@@ -46,13 +65,29 @@ namespace BnSBuddy2.Functions
         {
             if (enableboost)
             {
-                File.Move(Path2Movies + "\\BNSR_CI.mp4", Path2Movies + "\\_BNSR_CI.mp4");
-                File.Move(Path2Movies + "\\UE4_Branding.mp4", Path2Movies + "\\_UE4_Branding.mp4");
+                if (File.Exists(Path2Movies + "\\BNSR_CI.mp4"))
+                {
+                    File.Copy(Path2Movies + "\\BNSR_CI.mp4", Path2Movies + "\\_BNSR_CI.mp4", true);
+                    File.Delete(Path2Movies + "\\BNSR_CI.mp4");
+                }
+                if (File.Exists(Path2Movies + "\\UE4_Branding.mp4"))
+                {
+                    File.Copy(Path2Movies + "\\UE4_Branding.mp4", Path2Movies + "\\_UE4_Branding.mp4", true);
+                    File.Delete(Path2Movies + "\\UE4_Branding.mp4");
+                }
             }
             else
             {
-                File.Move(Path2Movies + "\\_BNSR_CI.mp4", Path2Movies + "\\BNSR_CI.mp4");
-                File.Move(Path2Movies + "\\_UE4_Branding.mp4", Path2Movies + "\\UE4_Branding.mp4");
+                if (File.Exists(Path2Movies + "\\_BNSR_CI.mp4"))
+                {
+                    File.Copy(Path2Movies + "\\_BNSR_CI.mp4", Path2Movies + "\\BNSR_CI.mp4", true);
+                    File.Delete(Path2Movies + "\\_BNSR_CI.mp4");
+                }
+                if (File.Exists(Path2Movies + "\\_UE4_Branding.mp4"))
+                {
+                    File.Copy(Path2Movies + "\\_UE4_Branding.mp4", Path2Movies + "\\UE4_Branding.mp4", true);
+                    File.Delete(Path2Movies + "\\_UE4_Branding.mp4");
+                }
             }
         }
 
@@ -60,9 +95,29 @@ namespace BnSBuddy2.Functions
         private static void ToggleLoading(bool enableboost, string Path2LoadingScreenLang)
         {
             if (enableboost)
-                Directory.Move(Path2LoadingScreenLang + "\\LoadingImage", Path2LoadingScreenLang + "\\_LoadingImage");
+            {
+                // Check if old Exists
+                if (Directory.Exists(Path2LoadingScreenLang + "\\LoadingImage") && Directory.Exists(Path2LoadingScreenLang + "\\_LoadingImage"))
+                    Directory.Delete(Path2LoadingScreenLang + "\\_LoadingImage", true);
+                // Move new Folder
+                if (Directory.Exists(Path2LoadingScreenLang + "\\LoadingImage"))
+                {
+                    FileSystem.CopyDirectory(Path2LoadingScreenLang + "\\LoadingImage", Path2LoadingScreenLang + "\\_LoadingImage");
+                    Directory.Delete(Path2LoadingScreenLang + "\\LoadingImage", true);
+                }
+            }
             else
-                Directory.Move(Path2LoadingScreenLang + "\\_LoadingImage", Path2LoadingScreenLang + "\\LoadingImage");
+            {
+                // Check if new Exists
+                if (Directory.Exists(Path2LoadingScreenLang + "\\_LoadingImage") && Directory.Exists(Path2LoadingScreenLang + "\\LoadingImage"))
+                    Directory.Delete(Path2LoadingScreenLang + "\\_LoadingImage", true);
+                // Move old Folder
+                if (Directory.Exists(Path2LoadingScreenLang + "\\_LoadingImage"))
+                {
+                    FileSystem.CopyDirectory(Path2LoadingScreenLang + "\\_LoadingImage", Path2LoadingScreenLang + "\\LoadingImage");
+                    Directory.Delete(Path2LoadingScreenLang + "\\_LoadingImage", true);
+                }
+            }
         }
 
         // Check Movie
@@ -73,10 +128,10 @@ namespace BnSBuddy2.Functions
                 // Copy any new files to replace backup
                 if (File.Exists(Path2Movies + "\\BNSR_CI.mp4") && File.Exists(Path2Movies + "\\UE4_Branding.mp4"))
                 {
-                    File.Delete(Path2Movies + "\\_BNSR_CI.mp4");
-                    File.Delete(Path2Movies + "\\_UE4_Branding.mp4");
-                    File.Move(Path2Movies + "\\BNSR_CI.mp4", Path2Movies + "\\_BNSR_CI.mp4");
-                    File.Move(Path2Movies + "\\UE4_Branding.mp4", Path2Movies + "\\_UE4_Branding.mp4");
+                    File.Copy(Path2Movies + "\\BNSR_CI.mp4", Path2Movies + "\\_BNSR_CI.mp4", true);
+                    File.Copy(Path2Movies + "\\UE4_Branding.mp4", Path2Movies + "\\_UE4_Branding.mp4", true);
+                    File.Delete(Path2Movies + "\\BNSR_CI.mp4");
+                    File.Delete(Path2Movies + "\\UE4_Branding.mp4");
                 }
                 // return result
                 return true;
@@ -93,7 +148,8 @@ namespace BnSBuddy2.Functions
                 if (Directory.Exists(Path2LoadingScreenLang + "\\LoadingImage"))
                 {
                     Directory.Delete(Path2LoadingScreenLang + "\\_LoadingImage", true);
-                    Directory.Move(Path2LoadingScreenLang + "\\LoadingImage", Path2LoadingScreenLang + "\\_LoadingImage");
+                    FileSystem.CopyDirectory(Path2LoadingScreenLang + "\\LoadingImage", Path2LoadingScreenLang + "\\_LoadingImage", UIOption.OnlyErrorDialogs, UICancelOption.DoNothing);
+                    Directory.Delete(Path2LoadingScreenLang + "\\LoadingImage", true);
                 }
                 // return result
                 return true;

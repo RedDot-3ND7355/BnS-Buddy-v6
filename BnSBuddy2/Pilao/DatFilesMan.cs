@@ -19,9 +19,12 @@ namespace BnSBuddy2.Pilao
         public static void Restore()
         {
             string FilePath = Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.bak";
-            File.Copy(FilePath, FilePath.Replace(".bak", ".pak"), true);
-            File.Delete(FilePath);
-            Form1.CurrentForm.SortOutputHandler("Restored Pak.");
+            if (File.Exists(FilePath))
+            {
+                File.Copy(FilePath, FilePath.Replace(".bak", ".pak"), true);
+                File.Delete(FilePath);
+                Form1.CurrentForm.SortOutputHandler("Restored Pak.");
+            }
         }
     }
 }

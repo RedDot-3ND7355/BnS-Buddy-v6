@@ -21,9 +21,9 @@ namespace BnSBuddy2.Functions
             {
                 case "All":
                     return (IntPtr)allCpu;
-                case "Odd":
-                    return (IntPtr)odd;
                 case "Even":
+                    return (IntPtr)odd;
+                case "Odd":
                     return (IntPtr)even;
                 case "First Half":
                     return (IntPtr)firstHalf;

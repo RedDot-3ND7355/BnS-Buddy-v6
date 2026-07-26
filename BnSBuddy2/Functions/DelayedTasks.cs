@@ -23,11 +23,15 @@ namespace BnSBuddy2.Functions
             Control.CheckForIllegalCrossThreadCalls = false;
             RunDelay.Method(UpdateChecker);
             LoaderChecker();
-            FasterToggle.CheckState(Form1.CurrentForm.materialComboBox2.SelectedItem.ToString(), Form1.CurrentForm.materialComboBox3.SelectedItem.ToString());
+            FasterToggle.CheckState(Form1.CurrentForm.materialComboBox2.SelectedItem, Form1.CurrentForm.materialComboBox3.SelectedItem);
             RunDelay.Method(CPUCount);
             ApplyActivatedLicense();
             FixSizes();
+            RunDelay.Method(StartScanningProcesses, 5000);
         }
+
+        private static void StartScanningProcesses() =>
+            Form1.CurrentForm.CheckProcesses.Start();
 
         // Fix size for 2 controls
         private static void FixSizes()
@@ -107,7 +111,7 @@ namespace BnSBuddy2.Functions
                                 tcpClient.SendTimeout = 500;
                                 tcpClient.ReceiveTimeout = 1000;
                                 StringBuilder stringBuilder = new StringBuilder();
-                                stringBuilder.AppendLine("GET /BuddyVersion.txt HTTP/1.1");
+                                stringBuilder.AppendLine("GET /BuddyVersionV6.txt HTTP/1.1");
                                 stringBuilder.AppendLine("Host: updates.bnsbuddy.com");
                                 stringBuilder.AppendLine("User-Agent: BnSBuddy/" + Application.ProductVersion + " (compatible;)");
                                 stringBuilder.AppendLine("Connection: close");
@@ -172,9 +176,10 @@ namespace BnSBuddy2.Functions
                         if (s != "Error")
                         {
                             Form1.CurrentForm.AddLauncherLog("Update available.");
+                            Form1.CurrentForm.materialButton5.Enabled = true;
+                            Form1.CurrentForm.materialButton5.Refresh();
                             if (Form1.CurrentForm.materialSwitch42.Checked)
                                 Form1.CurrentForm.UpdateHandler.StartUpdate();
-                            Form1.CurrentForm.materialButton5.Enabled = true;
                         }
                         else if (online == "Error")
                         {
@@ -199,10 +204,12 @@ namespace BnSBuddy2.Functions
         }
 
         // Check for WINMM.DLL (loader3)
-        private static void LoaderChecker()
+        public static void LoaderChecker()
         {
             if (File.Exists(Form1.CurrentForm.ExecuteableFile.ExecFolder + "winmm.dll"))
                 Form1.CurrentForm.materialLabel33.Text = "Active";
+            else
+                Form1.CurrentForm.materialLabel33.Text = "Inactive";
         }
     }
 }

@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using MaterialSkin;
+﻿using MaterialSkin;
 using MaterialSkin.Controls;
+using System;
+using System.Windows.Forms;
 
 namespace BnSBuddy2.ProfileManager
 {
@@ -69,6 +62,12 @@ namespace BnSBuddy2.ProfileManager
                 SaveAction();
                 e.SuppressKeyPress = true;
             }
+        }
+
+        private void AddGui_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            materialTextBox1.Text = "";
+            materialTextBox2.Text = "";
         }
     }
 }

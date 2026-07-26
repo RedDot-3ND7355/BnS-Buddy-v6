@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -11,6 +10,7 @@ using MaterialSkin.Controls;
 using MaterialSkin;
 using System.IO;
 using BnSBuddy2.Functions;
+using System.Diagnostics;
 
 namespace BnSBuddy2.PluginLoader
 {
@@ -138,6 +138,11 @@ namespace BnSBuddy2.PluginLoader
         {
             IniPLAM();
             InstallHandler = new AddonHandler();
+        }
+
+        private void materialButton4_Click(object sender, EventArgs e)
+        {
+            Process.Start("explorer.exe", BnSPatch_Addons_Path);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace BnSBuddy2.Functions
 {
@@ -17,9 +18,15 @@ namespace BnSBuddy2.Functions
             if (Form1.CurrentForm.ActiveSessions.GetActiveClientCount() == 0)
             {
                 foreach (string users in Form1.CurrentForm.ActiveSessions.DiedClients)
+                {
+                    // Restore window state
+                    if (Form1.CurrentForm.materialSwitch63.Checked)
+                        Form1.CurrentForm.notifyIcon1_MouseClick(null, new MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0));
                     Form1.CurrentForm.AddLauncherLog(users + "'s Game Process Died");
+                }
                 Form1.CurrentForm.PlayButton.Text = "Play!";
                 Form1.CurrentForm.materialButton2.Enabled = false;
+                Form1.CurrentForm.materialButton3.Enabled = false;
                 if (Form1.CurrentForm.materialSwitch46.Checked && Form1.CurrentForm.AppStarted && !Form1.CurrentForm.CalledKiller)
                 {
                     // Find any unsupported clients for relaunch!
@@ -59,7 +66,7 @@ namespace BnSBuddy2.Functions
                                     }
                                 }
                             }
-                            catch (Win32Exception) { GameProcess.Kill(); }
+                            catch { }
                         }
                         if (Form1.CurrentForm.ActiveSessions.CapturedClients.Count > 0)
                         {
@@ -70,11 +77,20 @@ namespace BnSBuddy2.Functions
                 }
             }
             else
+            {
+                Form1.CurrentForm.materialButton3.Enabled = true;
                 foreach (string users in Form1.CurrentForm.ActiveSessions.DiedClients)
+                {
+                    // Restore window state
+                    if (Form1.CurrentForm.materialSwitch63.Checked)
+                        Form1.CurrentForm.notifyIcon1_MouseClick(null, new MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0));
+
                     Form1.CurrentForm.AddLauncherLog(users + "'s Game Process Died");
-            if (Form1.CurrentForm.CalledKiller)
-                Form1.CurrentForm.CalledKiller = false;
-            BusyTimer = false;
+                }
+                if (Form1.CurrentForm.CalledKiller)
+                    Form1.CurrentForm.CalledKiller = false;
+                BusyTimer = false;
+            }
         }
     }
 }

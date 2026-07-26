@@ -79,7 +79,7 @@ namespace BnSBuddy2.ProfileManager
             this.materialComboBox2.MaxDropDownItems = 4;
             this.materialComboBox2.MouseState = MaterialSkin.MouseState.OUT;
             this.materialComboBox2.Name = "materialComboBox2";
-            this.materialComboBox2.Size = new System.Drawing.Size(241, 35);
+            this.materialComboBox2.Size = new System.Drawing.Size(351, 35);
             this.materialComboBox2.StartIndex = 0;
             this.materialComboBox2.TabIndex = 3;
             this.materialComboBox2.UseTallSize = false;
@@ -92,10 +92,11 @@ namespace BnSBuddy2.ProfileManager
             this.materialButton1.Depth = 0;
             this.materialButton1.HighEmphasis = true;
             this.materialButton1.Icon = null;
-            this.materialButton1.Location = new System.Drawing.Point(254, 70);
+            this.materialButton1.Location = new System.Drawing.Point(364, 70);
             this.materialButton1.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.materialButton1.MouseState = MaterialSkin.MouseState.HOVER;
             this.materialButton1.Name = "materialButton1";
+            this.materialButton1.NoAccentTextColor = System.Drawing.Color.Empty;
             this.materialButton1.Size = new System.Drawing.Size(61, 61);
             this.materialButton1.TabIndex = 4;
             this.materialButton1.Text = "Start";
@@ -107,7 +108,7 @@ namespace BnSBuddy2.ProfileManager
             // NewSession
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(323, 141);
+            this.ClientSize = new System.Drawing.Size(432, 141);
             this.Controls.Add(this.materialButton1);
             this.Controls.Add(this.materialComboBox2);
             this.Controls.Add(this.materialLabel2);

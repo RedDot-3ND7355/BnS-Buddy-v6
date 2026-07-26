@@ -20,6 +20,9 @@ namespace Security
                 text4 += text4.Replace(" ", "");
                 fingerPrint = text4.Trim();
             }
+            // New FingerPrint
+            if (string.IsNullOrEmpty(fingerPrint)) 
+                fingerPrint = getMachineGUID().Trim();
             return StringToHex(fingerPrint);
         }
 
@@ -31,6 +34,22 @@ namespace Security
                 stringBuilder.Append(Convert.ToInt32(value).ToString("x"));
             }
             return stringBuilder.ToString();
+        }
+
+        private static string getMachineGUID()
+        {
+            try
+            {
+                // Attempt System UUID via WMI
+                string text = identifier("Win32_ComputerSystemProduct", "UUID");
+                if (text == "")
+                {
+                    // Attempt Registry Machine GUID in Registry
+                    Microsoft.Win32.RegistryKey registryKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Cryptography");
+                    text = registryKey.GetValue("MachineGuid").ToString();
+                }
+                return text;
+            } catch { return ""; }
         }
 
         private static string identifier(string wmiClass, string wmiProperty)

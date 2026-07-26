@@ -1,4 +1,5 @@
-﻿using System;
+﻿using bnstool;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -37,7 +38,8 @@ namespace BnSBuddy2.Pilao
         public static string[] GetFileList(string datfile)
         {
             string filepath = PAK.PakHandler.FileList[datfile];
-            bnscompression.ParseResult _result = bnscompression.GetCreateParams(filepath, out var _, out var _, out var encryptionKey, out var encryptionKeySize, out var _, out var _, out var _);
+            /*
+            bnscompression.ParseResult _result = bnscompression.GetCreateParams2(filepath, out var _, out var _, out var encryptionKey, out var encryptionKeySize, out var _, out var _, out var _);
             switch (_result)
             {
                 case bnscompression.ParseResult.InvalidIdentifier:
@@ -58,10 +60,13 @@ namespace BnSBuddy2.Pilao
             }
             byte[] array = new byte[16];
             Marshal.Copy(encryptionKey, array, 0, array.Length);
+            */
+            var array = ((AESKeyObject)FastColoredHandler.DatHandler._configurator.Encryption.SelectedItem).Key;
+            var keysize = ((AESKeyObject)FastColoredHandler.DatHandler._configurator.Encryption.SelectedItem).Key.Length;
             int count = 0;
             bnscompression.DelegateResult result = bnscompression.DelegateResult.Continue;
             List<string> paths = new List<string>();
-            double value = bnscompression.ExtractToDirectory(filepath, TempPath + Path.GetFileName(filepath), array, encryptionKeySize, delegate (string entryName, ulong entrySize)
+            double value = bnscompression.ExtractToDirectory(filepath, TempPath + Path.GetFileName(filepath), array, (uint)keysize, true, delegate (string entryName, ulong entrySize)
             {
                 paths.Add(entryName);
                 if (result == bnscompression.DelegateResult.Continue)
@@ -82,7 +87,9 @@ namespace BnSBuddy2.Pilao
             Form1.CurrentForm.SortOutputHandler("Loading Dat...");
             Form1.CurrentForm.treeView1.Nodes.Clear();
             string filepath = PAK.PakHandler.FileList[filename];
-            bnscompression.ParseResult _result = bnscompression.GetCreateParams(filepath, out var _, out var _, out var encryptionKey, out var encryptionKeySize, out var _, out var _, out var _);
+            FastColoredHandler.DatHandler.DetectSettings(filepath);
+            /*
+            bnscompression.ParseResult _result = bnscompression.GetCreateParams2(filepath, out var _, out var _, out var encryptionKey, out var encryptionKeySize, out var _, out var _, out var _);
             switch (_result)
             {
                 case bnscompression.ParseResult.InvalidIdentifier:
@@ -101,12 +108,16 @@ namespace BnSBuddy2.Pilao
                     //MessageBox.Show("Unsupported RSA private key or invalid signature.");
                     break;
             }
+            
             byte[] array = new byte[16];
             Marshal.Copy(encryptionKey, array, 0, array.Length);
+            */
+            var array = ((AESKeyObject)FastColoredHandler.DatHandler._configurator.Encryption.SelectedItem).Key;
+            var keysize = ((AESKeyObject)FastColoredHandler.DatHandler._configurator.Encryption.SelectedItem).Key.Length;
             int count = 0;
             bnscompression.DelegateResult result = bnscompression.DelegateResult.Continue;
             List<string> paths = new List<string>();
-            double value = bnscompression.ExtractToDirectory(filepath, TempPath + Path.GetFileName(filepath), array, encryptionKeySize, delegate (string entryName, ulong entrySize)
+            double value = bnscompression.ExtractToDirectory(filepath, TempPath + Path.GetFileName(filepath), array, (uint)keysize, true, delegate (string entryName, ulong entrySize)
             {
                 paths.Add(entryName);
                 if (result == bnscompression.DelegateResult.Continue)

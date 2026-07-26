@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -131,6 +132,9 @@ namespace BnSBuddy2.CoreHandlers
         public static void StartGameAddons()
         {
             filesToEdit = new Dictionary<string, Dictionary<string, string[]>>();
+            Form1.CurrentForm.AddLauncherLog("Unpacking Pak...", true);
+            PAK.PakHandler.PakUnpack(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.pak");
+            Form1.CurrentForm.AddLauncherLog("Unpacked Pak!", true);
             foreach (TreeNode node in Form1.CurrentForm.treeView3.Nodes)
             {
                 if (node != null && node.Checked)
@@ -162,17 +166,17 @@ namespace BnSBuddy2.CoreHandlers
                 }
                 if (i > 0)
                 {
-                    Form1.CurrentForm.AddLauncherLog("Compiling " + item.Key, true);
-                    isBusyWorking = true;
-                    Task.Delay(0).ContinueWith(delegate
-                    {
-                        Control.CheckForIllegalCrossThreadCalls = false;
+                    Form1.CurrentForm.AddLauncherLog($"Compiling {item.Key}...", true);
+                    //isBusyWorking = true;
+                    //Task.Delay(0).ContinueWith(delegate
+                    //{
+                    //    Control.CheckForIllegalCrossThreadCalls = false;
                         Pilao.FastColoredHandler.DatHandler.RepackDat(TempPath + item.Key, item.Key);
                         Form1.CurrentForm.AddLauncherLog("Compiled.", true);
                         o++;
-                        isBusyWorking = false;
-                    });
-                    while (true) { Application.DoEvents(); if (!isBusyWorking) { break; } }
+                    //    isBusyWorking = false;
+                    //});
+                    //while (true) { Application.DoEvents(); if (!isBusyWorking) { break; } }
                 }
                 else
                 {
@@ -180,7 +184,11 @@ namespace BnSBuddy2.CoreHandlers
                 }
             }
             if (o > 0)
+            {
+                Form1.CurrentForm.AddLauncherLog("Repacking Pak...", true);
                 PAK.PakHandler.PakRepack(PAK.PakHandler.ExtractedDir);
+                Form1.CurrentForm.AddLauncherLog("Repacked Pak!", true);
+            }
             foreach (TreeNode node2 in Form1.CurrentForm.treeView3.Nodes)
             {
                 if (node2 != null && node2.Checked)
@@ -192,6 +200,9 @@ namespace BnSBuddy2.CoreHandlers
 
         public static void RestoreAddons()
         {
+            Form1.CurrentForm.AddLauncherLog("Unpacking Pak...", true);
+            PAK.PakHandler.PakUnpack(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.pak");
+            Form1.CurrentForm.AddLauncherLog("Unpacked Pak!", true);
             filesToEdit = new Dictionary<string, Dictionary<string, string[]>>();
             foreach (TreeNode node in Form1.CurrentForm.treeView3.Nodes)
             {
@@ -223,9 +234,9 @@ namespace BnSBuddy2.CoreHandlers
                         i++;
                     }
                 }
-                if (dictionary.Count > 0)
+                if (i > 0)
                 {
-                    Form1.CurrentForm.AddLauncherLog("Compiling " + item.Key, true);
+                    Form1.CurrentForm.AddLauncherLog($"Compiling {item.Key}...", true);
                     Pilao.FastColoredHandler.DatHandler.RepackDat(TempPath + item.Key, item.Key);
                     o++;
                     Form1.CurrentForm.AddLauncherLog("Compiled.", true);
@@ -236,7 +247,11 @@ namespace BnSBuddy2.CoreHandlers
                 }
             }
             if (o > 0)
+            {
+                Form1.CurrentForm.AddLauncherLog("Repacking Pak...", true);
                 PAK.PakHandler.PakRepack(PAK.PakHandler.ExtractedDir);
+                Form1.CurrentForm.AddLauncherLog("Repacked Pak!", true);
+            }
             foreach (TreeNode node2 in Form1.CurrentForm.treeView3.Nodes)
             {
                 if (node2 != null && node2.Checked)
@@ -303,14 +318,20 @@ namespace BnSBuddy2.CoreHandlers
                             Form1.CurrentForm.AddLauncherLog(string.Format("Skipped addon: {0} because the file {1} is missing", filename.Replace(".patch", "").Replace(".xml", ""), text2), true);
                             return;
                         }
-                        Dictionary<string, string> dictionary = new Dictionary<string, string>(); // string = internal file path, byte[] text in bytes
+                        Dictionary<string, string> dictionary = new Dictionary<string, string>();
                         try
                         {
-                            dictionary.Add(text3, Pilao.TreeViewHandler.ReadStringFromFile(text3, text4));
-                            // dictionary = bNSDat.ExtractFile(text4, new List<string> { text3 }, text2.Contains("64"));
+                            if (!Directory.Exists(Path.GetTempPath() + Path.GetFileName(text4)))
+                            {
+                                Form1.CurrentForm.AddLauncherLog($"Extracting {Path.GetFileName(text4)}...", true);
+                                Pilao.FastColoredHandler.DatHandler.ExtractDat(text4);
+                                Form1.CurrentForm.AddLauncherLog($"Extracted {Path.GetFileName(text4)}!", true);
+                            }
+                            dictionary.Add(text3, Pilao.TreeViewHandler.ReadStringFromFileZ(text3, text4));
                         }
-                        catch
+                        catch(Exception eee)
                         {
+                            Form1.CurrentForm.AddLauncherLog(eee.ToString());
                             Form1.CurrentForm.AddLauncherLog(string.Format("Error: file {2} is damaged/corrupted. Please do a file repair then try again", filename.Replace(".patch", "").Replace(".xml", ""), text3, text2), true);
                             return;
                         }
@@ -350,8 +371,15 @@ namespace BnSBuddy2.CoreHandlers
                     }
                     for (int i = 0; Search.Count > i; i++)
                     {
-                        if (text7.Contains(Search[i]))
+                        if (Regex.IsMatch(text7, Search[i]))
                         {
+                            // Regex
+                            text7 = Regex.Replace(text7, Search[i], Replace[i]);
+                            Form1.CurrentForm.AddLauncherLog("Regex Patched: " + (i + 1) + "/" + Replace.Count, true);
+                        }
+                        else if (text7.Contains(Search[i]))
+                        {
+                            // Normal
                             text7 = text7.Replace(Search[i], Replace[i]);
                             Form1.CurrentForm.AddLauncherLog("Patched: " + (i + 1) + "/" + Replace.Count, true);
                         }

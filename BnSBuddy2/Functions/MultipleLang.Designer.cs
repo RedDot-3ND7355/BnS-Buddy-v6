@@ -54,7 +54,7 @@ namespace BnSBuddy2.Functions
             this.materialComboBox1.MouseState = MaterialSkin.MouseState.OUT;
             this.materialComboBox1.Name = "materialComboBox1";
             this.materialComboBox1.Size = new System.Drawing.Size(288, 49);
-            this.materialComboBox1.StartIndex = 0;
+            this.materialComboBox1.StartIndex = -1;
             this.materialComboBox1.TabIndex = 0;
             // 
             // materialLabel1

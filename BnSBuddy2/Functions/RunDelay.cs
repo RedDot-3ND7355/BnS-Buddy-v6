@@ -5,7 +5,7 @@ namespace BnSBuddy2.Functions
 {
     public static class RunDelay
     {
-        public static void Method(Action method) =>
-            Task.Delay(50).ContinueWith(delegate { method(); });
+        public static void Method(Action method, int ms = 50) =>
+            Task.Delay(ms).ContinueWith(delegate { method(); });
     }
 }

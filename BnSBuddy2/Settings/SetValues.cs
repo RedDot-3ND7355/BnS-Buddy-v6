@@ -8,7 +8,7 @@ namespace BnSBuddy2.Settings
     {
         public SetValues(Dictionary<string, string> pairs)
         {
-            Dictionary<string, string> _pairs = new Dictionary<string,string>(pairs);
+            Dictionary<string, string> _pairs = new Dictionary<string, string>(pairs);
             // Set colors via argb int parsers
             Form1.CurrentForm.materialSkinManager.ColorScheme = new ColorScheme((Primary)Convert.ToInt32(_pairs["primary"].ToString()), (Primary)Convert.ToInt32(_pairs["darkprimary"].ToString()), (Primary)Convert.ToInt32(_pairs["lightprimary"].ToString()), (Accent)Convert.ToInt32(_pairs["accent"].ToString()), (TextShade)Convert.ToInt32(_pairs["textshade"].ToString()));
             Form1.CurrentForm.materialSkinManager.Theme = _pairs["theme"].ToString() == "DARK" ? MaterialSkinManager.Themes.DARK : MaterialSkinManager.Themes.LIGHT;
@@ -118,16 +118,23 @@ namespace BnSBuddy2.Settings
                 Form1.CurrentForm.materialSwitch54.Checked = false;
             if (_pairs["autogamecatcher"].ToString() == "false")
                 Form1.CurrentForm.materialSwitch46.Checked = false;
-            Form1.CurrentForm.readids = _pairs["readmessagesid"].ToString();
+            if (_pairs["closetotray"].ToString() == "true")
+                Form1.CurrentForm.materialSwitch56.Checked = true;
+            if (_pairs["purplesimulation"].ToString().ToLower() == "true")
+                Form1.CurrentForm.materialSwitch62.Checked = true;
+            if (_pairs["autorestore"].ToString().ToLower() == "false")
+                Form1.CurrentForm.materialSwitch63.Checked = false;
+            // Home Page
             Form1.CurrentForm.Inboxer.Routine();
-            if (Form1.CurrentForm.Inboxer.IDMessagePairs.Count > 0)
-            {
-                string tmp_inb = "Message";
-                if (Form1.CurrentForm.Inboxer.IDMessagePairs.Count > 1)
-                    tmp_inb += "s";
+            int totalread = Form1.CurrentForm.Inboxer.ReadIDs.Count;
+            int totalinbox = Form1.CurrentForm.Inboxer.IDMessagePairs.Count;
+            string tmp_inb = "Message";
+            if (totalinbox - totalread > 1)
+                tmp_inb += "s";
+            if (totalinbox - totalread > 0)
                 Form1.CurrentForm.FlashInbox.Enabled = true;
-                Form1.CurrentForm.materialButton57.Text = $"{Form1.CurrentForm.Inboxer.IDMessagePairs.Count} {tmp_inb}.";
-            }
+            Form1.CurrentForm.materialButton57.Text = $"{totalinbox - totalread} {tmp_inb}.";
+
         }
     }
 }

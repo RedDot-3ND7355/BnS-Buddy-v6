@@ -1,4 +1,5 @@
-﻿using _Process = System.Diagnostics.Process;
+﻿using BnSBuddy2.PluginLoader;
+using _Process = System.Diagnostics.Process;
 
 namespace BnSBuddy2.Functions
 {

@@ -120,7 +120,7 @@ namespace BnSBuddy2.PluginLoader
                 // this generates the table of current plugins installed/local
                 GetLocalPlugins();
                 // Use online file listing
-                OnlineFile.GrabMegaFileTable();
+                OnlineFile.GrabOnlineFileTable();
                 File_Table = OnlineFile.File_Table;
                 // Set online if both listings were successful
                 if (File_Table.Count > 0)
@@ -188,7 +188,11 @@ namespace BnSBuddy2.PluginLoader
                 IsWorking = true;
                 materialLabel2.Visible = true;
                 materialLabel2.Refresh();
-                OnlineFile.GrabMegaFileTable(true);
+                // Reload catalog from plugins/old/ and re-bind File_Table
+                // (GrabOnlineFileTable replaces OnlineFile.File_Table; must not keep the current-list reference)
+                OnlineFile.GrabOnlineFileTable(true);
+                File_Table = OnlineFile.File_Table;
+                IsOnline = File_Table != null && File_Table.Count > 0;
                 materialListBox2.Items.Clear();
                 if (IsOnline)
                     foreach (string plugin in File_Table)
@@ -223,6 +227,7 @@ namespace BnSBuddy2.PluginLoader
                 return;
             IsWorking = true;
             materialProgressBar1.Visible = true;
+            materialProgressBar1.Refresh();
             Task.Delay(50).ContinueWith(delegate
             {
                 CheckForIllegalCrossThreadCalls = false;
@@ -232,6 +237,7 @@ namespace BnSBuddy2.PluginLoader
                     InstallHandler.Install(materialListBox2.SelectedItem.Text);
                 GetLocalPlugins();
                 materialProgressBar1.Visible = false;
+                materialProgressBar1.Refresh();
                 IsWorking = false;
             });
         }
@@ -290,5 +296,10 @@ namespace BnSBuddy2.PluginLoader
             });
             while (BootCheck) { Application.DoEvents();  materialSwitch1.Checked = (materialLabel1.Text != "00-00-0000"); Task.Delay(25); }
         }
+
+        private void PLGui_FormClosing(object sender, FormClosingEventArgs e)
+        {
+        }
     }
 }
+

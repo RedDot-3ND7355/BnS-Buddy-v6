@@ -4,7 +4,7 @@ using System.IO;
 using System.Windows.Forms;
 
 
-namespace Revamped_BnS_Buddy.LegacyBin
+namespace BnSBuddy2.LegacyBin
 {
     public class StrWriter : TextWriter
     {

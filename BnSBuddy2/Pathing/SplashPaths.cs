@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.UI;
 
 namespace BnSBuddy2.Pathing
 {
@@ -18,9 +19,18 @@ namespace BnSBuddy2.Pathing
         // End Globals
 
         // Return Splash path based on language and region & set globals
-        public void ReturnSplashPath(string region, string lang)
+        public void ReturnSplashPath(object _region, object _lang)
         {
+            string region = "";
+            string lang = "";
+            // Verify if null
+            if (_region == null || _lang == null)
+                return;
+            region = _region.ToString();
+            lang = _lang.ToString();
+            //
             region = RegionConvert.Convert(region);
+            //Prompt.Popup($"converted region: {region} | original: {_region} | Lang: {lang}"); // testing
             RecursiveFind(Form1.CurrentForm.ClientPaths.Installs[region], lang);
             VerifyIntegrety();
             ExtractBnSBuddySplashes();

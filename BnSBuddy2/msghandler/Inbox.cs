@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Xml;
+using MaterialSkin;
 
 namespace BnSBuddy2.msghandler
 {
@@ -9,7 +11,9 @@ namespace BnSBuddy2.msghandler
     {
         private string[] IDS;
         public Dictionary<int, string> IDMessagePairs = new Dictionary<int, string>();
-        public Dictionary<int, string> ReadMessages = new Dictionary<int, string>();
+        public List<XmlNode> ReadMessages = new List<XmlNode>();
+        public List<int> ReadIDs = new List<int>();
+        public Dictionary<string, int> TitleIDPairs = new Dictionary<string, int>();
         private XmlNodeList MsgList;
 
         private void GetInbox()
@@ -23,7 +27,7 @@ namespace BnSBuddy2.msghandler
             {
                 xmltext = browser.DownloadString(_UriBuilder("https://bnsbuddy.com/count/inbox.xml"));
             }
-            catch { xmltext = "<?xml version=\"1.0\" encoding=\"utf-8\"?><inbox><message name=\"1\">Error, could not fetch inbox messages.</message></inbox>"; }
+            catch { xmltext = "<?xml version=\"1.0\" encoding=\"utf-8\"?><inbox><message title=\"Error\" name=\"1\">Error, could not fetch inbox messages.</message></inbox>"; }
             XmlDocument objects = new XmlDocument();
             objects.LoadXml(xmltext);
             MsgList = objects.DocumentElement.GetElementsByTagName("message");
@@ -37,45 +41,49 @@ namespace BnSBuddy2.msghandler
             GetReadIds();
             // Sort msgs by ids
             SortIDS();
-            // Remove read ids
-            RemoveIDS();
             // Apply unread count
             ApplyCount();
+            // Generate Inbox List
+            PopulateInbox();
+        }
+
+        private void PopulateInbox()
+        {
+            foreach (XmlNode node in ReadMessages)
+            {
+                string readornot = "";
+                if (!ReadIDs.Contains(int.Parse(node.Attributes["name"].Value)))
+                    readornot = " (unread)";
+                Form1.CurrentForm.materialListBox2.Items.Add(new MaterialListBoxItem(node.Attributes["title"].Value + readornot));
+                TitleIDPairs.Add(node.Attributes["title"].Value, int.Parse(node.Attributes["name"].Value));
+            }
         }
 
         private void ApplyCount() =>
             Form1.CurrentForm.materialButton57.Text = Form1.CurrentForm.materialButton57.Text.Replace("0", IDMessagePairs.Count.ToString());
-
-        private void RemoveIDS()
-        {
-            foreach (string id in IDS)
-            {
-                if (IDMessagePairs.ContainsKey(int.Parse(id)))
-                {
-                    IDMessagePairs.Remove(int.Parse(id));
-                }
-            }
-        }
 
         private void SortIDS()
         {
             foreach (XmlNode node in MsgList)
             {
                 IDMessagePairs.Add(int.Parse(node.Attributes["name"].Value), node.InnerText);
-                ReadMessages.Add(int.Parse(node.Attributes["name"].Value), node.InnerText);
+                ReadMessages.Add(node);
             }
             MsgList = null;
         }
 
-        private void GetReadIds()
+        public void ReadID(int id)
         {
-            IDS = Form1.CurrentForm.routine.CurrentSettings["readmessagesid"].Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+            if (!ReadIDs.Contains(id))
+                ReadIDs.Add(id);
         }
+
+        private void GetReadIds() =>
+            ReadIDs.AddRange(Array.ConvertAll(Form1.CurrentForm.routine.CurrentSettings["readmessagesid"].Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries), s => int.Parse(s)));
 
         private Uri _UriBuilder(string url)
         {
-            Uri returl = new Uri(url, UriKind.Absolute);
-            return returl;
+            return new Uri(url, UriKind.Absolute);
         }
     }
 }

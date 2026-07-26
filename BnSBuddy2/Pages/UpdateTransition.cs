@@ -78,7 +78,7 @@ namespace BnSBuddy2.Pages
                         tcpClient.SendTimeout = 500;
                         tcpClient.ReceiveTimeout = 1000;
                         StringBuilder stringBuilder = new StringBuilder();
-                        stringBuilder.AppendLine("GET /Changelog.txt HTTP/1.1");
+                        stringBuilder.AppendLine("GET /ChangelogV6.txt HTTP/1.1");
                         stringBuilder.AppendLine("Host: updates.bnsbuddy.com");
                         stringBuilder.AppendLine("User-Agent: BnSBuddy/" + Application.ProductVersion + " (compatible;)");
                         stringBuilder.AppendLine("Connection: close");

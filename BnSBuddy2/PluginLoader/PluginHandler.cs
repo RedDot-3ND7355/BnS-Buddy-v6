@@ -1,16 +1,15 @@
-﻿using BnSBuddy2.Functions;
-using CG.Web.MegaApiClient;
+using BnSBuddy2.Functions;
 using Ionic.Zip;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 
 namespace BnSBuddy2.PluginLoader
 {
     class PluginHandler
     {
-        private Dictionary<string, INode> PluginNodes = new Dictionary<string, INode>();
         private string UserProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "\\Documents\\BnS\\patches\\";
         private string AppPath = Form1.CurrentForm.AppPath;
         private string RegPath = Form1.CurrentForm.ClientPaths.Installs[RegionConvert.Convert(Form1.CurrentForm.materialComboBox2.SelectedItem.ToString())];
@@ -27,39 +26,61 @@ namespace BnSBuddy2.PluginLoader
 
         public void Install(string PluginName)
         {
-            PluginNodes = PLGui.CurrentForm.OnlineFile.Node_Table;
-            var client = new MegaApiClient(new WebClient(20000));
-            client.LoginAnonymous();
-            if (!Directory.Exists(AppPath + "\\Plugins Downloads"))
-                Directory.CreateDirectory(AppPath + "\\Plugins Downloads");
-            if (File.Exists(AppPath + "\\Plugins Downloads\\" + PluginNodes[PluginName].Name))
-                File.Delete(AppPath + "\\Plugins Downloads\\" + PluginNodes[PluginName].Name);
-            client.DownloadFile(PluginNodes[PluginName], AppPath + "\\Plugins Downloads\\" + PluginNodes[PluginName].Name);
-            // Check for patches.xml
+            var table = PLGui.CurrentForm.OnlineFile;
+            if (!table.TryGetUrl(PluginName, out string downloadUrl))
+            {
+                Prompt.Popup("Plugin not found in online catalog: " + PluginName);
+                return;
+            }
+
+            string downloadsDir = AppPath + "\\Plugins Downloads";
+            if (!Directory.Exists(downloadsDir))
+                Directory.CreateDirectory(downloadsDir);
+
+            string localZip = Path.Combine(downloadsDir, Path.GetFileName(PluginName));
+            if (File.Exists(localZip))
+                File.Delete(localZip);
+
+            try
+            {
+                DownloadFile(downloadUrl, localZip);
+            }
+            catch (Exception ex)
+            {
+                Prompt.Popup("Download failed: " + PluginName + Environment.NewLine + ex.Message);
+                return;
+            }
+
+            // patches.xml for bnspatch
             try
             {
                 if (!Directory.Exists(UserProfile))
                     Directory.CreateDirectory(UserProfile);
-                if (!File.Exists(UserProfile.Replace("patches", "") + "patches.xml") && PluginName.Contains("bnspatch"))
-                    client.DownloadFile(PluginNodes["patches.xml"], UserProfile.Replace("patches", "") + "patches.xml");
+                string patchesDest = UserProfile.Replace("patches\\", "") + "patches.xml";
+                if (!File.Exists(patchesDest) && PluginName.IndexOf("bnspatch", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (table.TryGetUrl("patches.xml", out string patchesUrl))
+                        DownloadFile(patchesUrl, patchesDest);
+                }
             }
             catch (Exception ex)
             {
-                Prompt.Popup("Failed to download patches.xml to user profile documents." + Environment.NewLine + "SavePath: " + UserProfile + Environment.NewLine + ex.Message + Environment.NewLine + ex.StackTrace);
+                Prompt.Popup("Failed to download patches.xml to user profile documents." + Environment.NewLine +
+                             "SavePath: " + UserProfile + Environment.NewLine + ex.Message + Environment.NewLine + ex.StackTrace);
             }
-            // Extract the zip file accordingly over the RegPath (only bin and bin64 folders!)
+
             List<string> FileInfos = new List<string>();
             bool error = false;
-            if (PluginNodes[PluginName].Name.EndsWith(".zip"))
+            if (localZip.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
                 try
                 {
-                    using (ZipFile zip = ZipFile.Read(AppPath + "\\Plugins Downloads\\" + PluginNodes[PluginName].Name))
+                    using (ZipFile zip = ZipFile.Read(localZip))
                     {
                         foreach (ZipEntry e in zip.Where(x => x.FileName.StartsWith("BNSR")))
                         {
                             e.Extract(RegPath, ExtractExistingFileAction.OverwriteSilently);
-                            FileInfos.Add(e.FileName); // Added successfully
+                            FileInfos.Add(e.FileName);
                         }
                     }
                 }
@@ -75,7 +96,6 @@ namespace BnSBuddy2.PluginLoader
                 }
                 if (error)
                 {
-                    // Rollback
                     foreach (string FilePath in FileInfos)
                     {
                         if (File.Exists(FilePath))
@@ -83,37 +103,69 @@ namespace BnSBuddy2.PluginLoader
                     }
                 }
 
-                // Dispose zip file and folder if empty
-                File.Delete(AppPath + "\\Plugins Downloads\\" + PluginNodes[PluginName].Name);
-                if (Directory.EnumerateFiles(AppPath + "\\Plugins Downloads").Count() == 0)
+                try { File.Delete(localZip); } catch { }
+                try
                 {
-                    Directory.Delete(AppPath + "\\Plugins Downloads");
+                    if (Directory.Exists(downloadsDir) &&
+                        !Directory.EnumerateFiles(downloadsDir).Any())
+                        Directory.Delete(downloadsDir);
                 }
+                catch { }
             }
         }
 
         public void InstallPL(string PluginName)
         {
-            PluginNodes = PLGui.CurrentForm.OnlineFile.Node_Table;
-            foreach (string plname in PluginNodes.Keys)
-                if (plname.Contains(PluginName))
+            var table = PLGui.CurrentForm.OnlineFile;
+            string resolved = PluginName;
+            foreach (string plname in table.Url_Table.Keys)
+            {
+                if (plname.IndexOf(PluginName, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    PluginName = plname;
+                    resolved = plname;
                     break;
                 }
-            var client = new MegaApiClient(new WebClient(20000));
-            client.LoginAnonymous();
-            if (!Directory.Exists(AppPath + "\\Plugins Downloads"))
-                Directory.CreateDirectory(AppPath + "\\Plugins Downloads");
-            if (File.Exists(AppPath + "\\Plugins Downloads\\" + PluginName))
-                File.Delete(AppPath + "\\Plugins Downloads\\" + PluginName);
-            client.DownloadFile(PluginNodes[PluginName], AppPath + "\\Plugins Downloads\\" + PluginName);
-            //
-            using (ZipFile zip = ZipFile.Read(AppPath + "\\Plugins Downloads\\" + PluginName))
+            }
+
+            if (!table.TryGetUrl(resolved, out string downloadUrl))
+            {
+                Prompt.Popup("Plugin loader package not found online (looking for names containing: " + PluginName + ").");
+                return;
+            }
+
+            string downloadsDir = AppPath + "\\Plugins Downloads";
+            if (!Directory.Exists(downloadsDir))
+                Directory.CreateDirectory(downloadsDir);
+
+            string localZip = Path.Combine(downloadsDir, Path.GetFileName(resolved));
+            if (File.Exists(localZip))
+                File.Delete(localZip);
+
+            try
+            {
+                DownloadFile(downloadUrl, localZip);
+            }
+            catch (Exception ex)
+            {
+                Prompt.Popup("Download failed: " + resolved + Environment.NewLine + ex.Message);
+                return;
+            }
+
+            using (ZipFile zip = ZipFile.Read(localZip))
                 foreach (ZipEntry e in zip.Where(x => x.FileName.StartsWith("BNSR")))
                     e.Extract(RegPath, ExtractExistingFileAction.OverwriteSilently);
-            // Dispose folder
-            Directory.Delete(AppPath + "\\Plugins Downloads", true);
+
+            try { Directory.Delete(downloadsDir, true); } catch { }
+        }
+
+        private static void DownloadFile(string url, string destPath)
+        {
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            using (var client = new WebClient())
+            {
+                client.Headers[HttpRequestHeader.UserAgent] = "BnSBuddy2-PluginLoader";
+                client.DownloadFile(url, destPath);
+            }
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using bnstool;
+using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -101,8 +103,40 @@ public static class bnscompression
     // Unfortunately, for now there is no way to convey this exception information back to you on the C# end.
     // Most of the time, it will probably mean a write permissions error (if not running as admin).
 
+    //[DllImport("bnscompression2.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+    //public static extern ParseResult GetCreateParams([MarshalAs(UnmanagedType.LPWStr)] string fileName, [MarshalAs(UnmanagedType.U1)] out bool use64Bit, out CompressionLevel compressionLevel, out IntPtr encryptionKey, out uint encryptionKeySize, out IntPtr privateKeyBlob, out uint privateKeyBlobSize, out BinaryXmlVersion binaryXmlVersion);
+
     [DllImport("bnscompression.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-    public static extern ParseResult GetCreateParams([MarshalAs(UnmanagedType.LPWStr)] string fileName, [MarshalAs(UnmanagedType.U1)] out bool use64Bit, out CompressionLevel compressionLevel, out IntPtr encryptionKey, out uint encryptionKeySize, out IntPtr privateKeyBlob, out uint privateKeyBlobSize, out BinaryXmlVersion binaryXmlVersion);
+    private static extern ParseResult GetCreateParams(string fileName, uint encryptionKeyCount, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.SysInt)] IntPtr[] encryptionKeyBuffers, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.U4)] uint[] encryptionKeySizes, uint signingKeyCount, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.SysInt)] IntPtr[] signingKeyBuffers, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.U4)] uint[] signingKeySizes, [MarshalAs(UnmanagedType.U1)] out bool use64Bit, out CompressionLevel compressionLevel, out uint encryptionKeyIndex, out uint signingKeyIndex, out BinaryXmlVersion binaryXmlVersion);
+
+    public static ParseResult GetCreateParams(string fileName, byte[][] encryptionKeyBuffers, byte[][] signingKeyBuffers, out bool use64Bit, out CompressionLevel compressionLevel, out uint encryptionKeyIndex, out uint signingKeyIndex, out BinaryXmlVersion binaryXmlVersion)
+    {
+        ParseResult parseResult = ParseResult.OK;
+        GCHandle[] array = Array.Empty<GCHandle>();
+        GCHandle[] array2 = Array.Empty<GCHandle>();
+        try
+        {
+            array = encryptionKeyBuffers.Select((byte[] x) => GCHandle.Alloc(x, GCHandleType.Pinned)).ToArray();
+            uint[] encryptionKeySizes = encryptionKeyBuffers.Select((byte[] x) => (uint)x.Length).ToArray();
+            array2 = signingKeyBuffers.Select((byte[] x) => GCHandle.Alloc(x, GCHandleType.Pinned)).ToArray();
+            uint[] signingKeySizes = signingKeyBuffers.Select((byte[] x) => (uint)x.Length).ToArray();
+            return GetCreateParams(fileName, (uint)encryptionKeyBuffers.Length, array.Select((GCHandle x) => x.AddrOfPinnedObject()).ToArray(), encryptionKeySizes, (uint)signingKeyBuffers.Length, array2.Select((GCHandle x) => x.AddrOfPinnedObject()).ToArray(), signingKeySizes, out use64Bit, out compressionLevel, out encryptionKeyIndex, out signingKeyIndex, out binaryXmlVersion);
+        }
+        finally
+        {
+            GCHandle[] array3 = array;
+            foreach (GCHandle gCHandle in array3)
+            {
+                gCHandle.Free();
+            }
+            array3 = array2;
+            foreach (GCHandle gCHandle2 in array3)
+            {
+                gCHandle2.Free();
+            }
+        }
+    }
+
 
     // Pre-process the file entry list and filter out anything you don't want, or cancel entirely.
     // Delegate Results
@@ -114,7 +148,7 @@ public static class bnscompression
 
     // Static Functions
     [DllImport("bnscompression.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-    public static extern double ExtractToDirectory([MarshalAs(UnmanagedType.LPWStr)] string sourceFileName, [MarshalAs(UnmanagedType.LPWStr)] string destinationDirectoryName, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.U1, SizeParamIndex = 3)] byte[] encryptionKey, uint encryptionKeySize, Delegate d);
+    public static extern double ExtractToDirectory([MarshalAs(UnmanagedType.LPWStr)] string sourceFileName, [MarshalAs(UnmanagedType.LPWStr)] string destinationDirectoryName, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.U1, SizeParamIndex = 3)] byte[] encryptionKey, uint encryptionKeySize, bool deserializeXml, Delegate d);
 
     [DllImport("bnscompression.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
     public static extern double CreateFromDirectory([MarshalAs(UnmanagedType.LPWStr)] string sourceDirectoryName, [MarshalAs(UnmanagedType.LPWStr)] string destinationFileName, [MarshalAs(UnmanagedType.U1)] bool use64Bit, CompressionLevel compressionLevel, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.U1, SizeParamIndex = 5)] byte[] encryptionKey, uint encryptionKeySize, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.U1, SizeParamIndex = 7)] byte[] privateKeyBlob, uint privateKeyBlobSize, BinaryXmlVersion binaryXmlVersion, Delegate d);

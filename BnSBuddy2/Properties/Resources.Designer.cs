@@ -19,7 +19,7 @@ namespace BnSBuddy2.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -83,10 +83,20 @@ namespace BnSBuddy2.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
-        internal static byte[] BnS_Buddy_Updater {
+        internal static byte[] BnS_Buddy_Updater_V3 {
             get {
-                object obj = ResourceManager.GetObject("BnS_Buddy_Updater", resourceCulture);
+                object obj = ResourceManager.GetObject("BnS_Buddy_Updater_V3", resourceCulture);
                 return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap buddy_dragon_original_square {
+            get {
+                object obj = ResourceManager.GetObject("buddy-dragon-original-square", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         
@@ -131,6 +141,16 @@ namespace BnSBuddy2.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap open_in_browser_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24 {
+            get {
+                object obj = ResourceManager.GetObject("open_in_browser_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
         internal static byte[] PublicKey {
@@ -153,9 +173,29 @@ namespace BnSBuddy2.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] Removes {
+            get {
+                object obj = ResourceManager.GetObject("Removes", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] UnrealPak {
             get {
                 object obj = ResourceManager.GetObject("UnrealPak", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] WebView2Requirements {
+            get {
+                object obj = ResourceManager.GetObject("WebView2Requirements", resourceCulture);
                 return ((byte[])(obj));
             }
         }

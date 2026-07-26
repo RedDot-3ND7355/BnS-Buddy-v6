@@ -56,6 +56,7 @@ namespace BnSBuddy2.PluginLoader
             this.materialButton1.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.materialButton1.MouseState = MaterialSkin.MouseState.HOVER;
             this.materialButton1.Name = "materialButton1";
+            this.materialButton1.NoAccentTextColor = System.Drawing.Color.Empty;
             this.materialButton1.Size = new System.Drawing.Size(86, 29);
             this.materialButton1.TabIndex = 0;
             this.materialButton1.Text = "Old Builds";
@@ -76,6 +77,7 @@ namespace BnSBuddy2.PluginLoader
             this.materialButton2.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.materialButton2.MouseState = MaterialSkin.MouseState.HOVER;
             this.materialButton2.Name = "materialButton2";
+            this.materialButton2.NoAccentTextColor = System.Drawing.Color.Empty;
             this.materialButton2.Size = new System.Drawing.Size(80, 29);
             this.materialButton2.TabIndex = 1;
             this.materialButton2.Text = "Help";
@@ -96,6 +98,7 @@ namespace BnSBuddy2.PluginLoader
             this.materialButton3.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.materialButton3.MouseState = MaterialSkin.MouseState.HOVER;
             this.materialButton3.Name = "materialButton3";
+            this.materialButton3.NoAccentTextColor = System.Drawing.Color.Empty;
             this.materialButton3.Size = new System.Drawing.Size(100, 29);
             this.materialButton3.TabIndex = 2;
             this.materialButton3.Text = "Uninstall";
@@ -116,6 +119,7 @@ namespace BnSBuddy2.PluginLoader
             this.materialButton4.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.materialButton4.MouseState = MaterialSkin.MouseState.HOVER;
             this.materialButton4.Name = "materialButton4";
+            this.materialButton4.NoAccentTextColor = System.Drawing.Color.Empty;
             this.materialButton4.Size = new System.Drawing.Size(98, 29);
             this.materialButton4.TabIndex = 3;
             this.materialButton4.Text = "Install";
@@ -152,6 +156,7 @@ namespace BnSBuddy2.PluginLoader
             this.materialButton5.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
             this.materialButton5.MouseState = MaterialSkin.MouseState.HOVER;
             this.materialButton5.Name = "materialButton5";
+            this.materialButton5.NoAccentTextColor = System.Drawing.Color.Empty;
             this.materialButton5.Size = new System.Drawing.Size(75, 29);
             this.materialButton5.TabIndex = 5;
             this.materialButton5.Text = "Update";
@@ -216,7 +221,7 @@ namespace BnSBuddy2.PluginLoader
             this.materialListBox1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.materialListBox1.BorderColor = System.Drawing.Color.LightGray;
             this.materialListBox1.Depth = 0;
-            this.materialListBox1.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.materialListBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             this.materialListBox1.Location = new System.Drawing.Point(406, 128);
             this.materialListBox1.MouseState = MaterialSkin.MouseState.HOVER;
             this.materialListBox1.Name = "materialListBox1";
@@ -233,7 +238,7 @@ namespace BnSBuddy2.PluginLoader
             this.materialListBox2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.materialListBox2.BorderColor = System.Drawing.Color.LightGray;
             this.materialListBox2.Depth = 0;
-            this.materialListBox2.Font = new System.Drawing.Font("Roboto", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
+            this.materialListBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 16F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel);
             this.materialListBox2.Location = new System.Drawing.Point(7, 109);
             this.materialListBox2.MouseState = MaterialSkin.MouseState.HOVER;
             this.materialListBox2.Name = "materialListBox2";
@@ -268,6 +273,7 @@ namespace BnSBuddy2.PluginLoader
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Plugin Manager";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.PLGui_FormClosing);
             this.Shown += new System.EventHandler(this.PLGui_Shown);
             this.ResumeLayout(false);
             this.PerformLayout();

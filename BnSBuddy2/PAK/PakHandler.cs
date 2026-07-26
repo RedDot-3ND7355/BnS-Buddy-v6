@@ -1,4 +1,5 @@
-﻿using BnSBuddy2.Functions;
+﻿using BnSBuddy2.CoreHandlers;
+using BnSBuddy2.Functions;
 using Ionic.Zip;
 using System;
 using System.Collections.Generic;
@@ -38,8 +39,8 @@ namespace BnSBuddy2.PAK
 
         public static void PakUnpack(string file)
         {
-            if (!File.Exists(file))
-                file = file.Replace("Pak0-Local.pak", "Pak0-Local_p.pak");
+            if (File.Exists(file.Replace("Pak0-Local.pak", "Mods\\Pak0-Local_P.pak")))
+                file = file.Replace("Pak0-Local.pak", "Mods\\Pak0-Local_P.pak");
             Form1.CurrentForm.SortOutputHandler("Unpacking Pak...");
             Form1.CurrentForm.materialComboBox5.Items.Clear();
             FileList = new Dictionary<string, string>();
@@ -60,8 +61,11 @@ namespace BnSBuddy2.PAK
             {
                 int length = file.IndexOf('.');
                 string text = file.Substring(0, length);
-                string text2 = $"{TempPath}quickbms.exe \"{TempPath}BNS.bms\" \"" + file + "\" \"" + text + "\"";
-                ExtractedPath = Form1.CurrentForm.PakPaths.PakPath + new DirectoryInfo(text).Name;
+                string text2 = $"\"{TempPath}quickbms.exe\" \"{TempPath}BNS.bms\" \"" + file + "\" \"" + text + "\"";
+                if (!new DirectoryInfo(text).Name.Contains("_P"))
+                    ExtractedPath = Form1.CurrentForm.PakPaths.PakPath + new DirectoryInfo(text).Name;
+                else
+                    ExtractedPath = Form1.CurrentForm.PakPaths.PakPath + "Mods\\" + new DirectoryInfo(text).Name;
                 ExtractedDir = ExtractedPath;
                 DirectoryInfo directoryInfo = new DirectoryInfo(text);
                 if (!directoryInfo.Exists)
@@ -84,10 +88,22 @@ namespace BnSBuddy2.PAK
                 Form1.CurrentForm.materialComboBox5.Items.Add(Path.GetFileName(datfile));
                 FileList.Add(Path.GetFileName(datfile), datfile);
             }
+            // Fetch Selected Language local64.dat
+            if (Form1.CurrentForm.materialComboBox3.SelectedItem != null && LocaleDats.ContainsKey(Form1.CurrentForm.materialComboBox3.SelectedItem.ToString()))
+            {
+                string[] zfiles = Directory.GetFiles(LocaleDats[Form1.CurrentForm.materialComboBox3.SelectedItem.ToString()], "*.dat", SearchOption.AllDirectories);
+                foreach (string datfile in zfiles)
+                {
+                    Form1.CurrentForm.materialComboBox5.Items.Add(Path.GetFileName(datfile));
+                    FileList.Add(Path.GetFileName(datfile), datfile);
+                }
+            }
             //
             CleanPak();
             Form1.CurrentForm.SortOutputHandler("Unpacked.");
         }
+
+        public static Dictionary<string, string> LocaleDats = new Dictionary<string, string>();
 
         public static void PakRepack(string folder)
         {
@@ -112,8 +128,8 @@ namespace BnSBuddy2.PAK
                 process.StandardInput.Write(text2 + Environment.NewLine);
                 text2 = "@echo \"" + Path.GetDirectoryName(folder) + "\\" + Path.GetFileName(folder) + $"\\*.*\" \"..\\..\\..\\*.*\" >filelist.txt";
                 process.StandardInput.Write(text2 + Environment.NewLine);
-                string tmp = folder.Contains("_p") ? ".pak" : "_p.pak";
-                text2 = $"{WorkingPath}\\UnrealPak\\Engine\\Binaries\\Win64\\UnrealPak.exe \"" + folder + $"{tmp}\" -create=\"{WorkingPath}\\filelist.txt\" -compress -compressionformat=\"oodle\" ";
+                string tmp = folder.Contains("_P") ? ".pak" : "_P.pak";
+                text2 = $"\"{WorkingPath}\\UnrealPak\\Engine\\Binaries\\Win64\\UnrealPak.exe\" \"" + folder + $"{tmp}\" -create=\"{WorkingPath}\\filelist.txt\" -compress -compressionformat=\"oodle\" ";
                 process.StandardInput.Write(text2 + Environment.NewLine);
                 text2 = "@popd";
                 process.StandardInput.Write(text2 + Environment.NewLine);
@@ -149,9 +165,12 @@ namespace BnSBuddy2.PAK
             Form1.CurrentForm.SortOutputHandler("Repacked.");
             if (File.Exists(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.sig"))
             {
-                File.Copy(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.sig", Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local_p.sig");
-                File.Delete(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.sig");
-                File.Delete(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.pak");
+                File.Copy(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.sig", Form1.CurrentForm.PakPaths.PakPath + "Mods\\Pak0-Local_P.sig", true);
+                if (File.Exists(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local_P.pak"))
+                {
+                    File.Copy(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local_P.pak", Form1.CurrentForm.PakPaths.PakPath + "Mods\\Pak0-Local_P.pak", true);
+                    File.Delete(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local_p.pak");
+                }
             }
         }
     }

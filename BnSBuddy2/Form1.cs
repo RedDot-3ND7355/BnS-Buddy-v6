@@ -1,11 +1,16 @@
 ﻿using BnSBuddy2.CoreHandlers;
+using BnSBuddy2.Database;
 using BnSBuddy2.Functions;
+using BnSBuddy2.INI;
+using BnSBuddy2.msghandler;
 using BnSBuddy2.Packets;
+using BnSBuddy2.ProfileManager;
 using BnSBuddy2.Properties;
 using BnSBuddy2.Settings;
 using FastColoredTextBoxNS;
+using IWshRuntimeLibrary;
 using MaterialSkin;
-using Microsoft.Win32;
+using MaterialSkin.Controls;
 using Security;
 using System;
 using System.Collections.Generic;
@@ -16,6 +21,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using _Process = System.Diagnostics.Process;
 
@@ -60,6 +66,7 @@ namespace BnSBuddy2
         public string langremembered = "";
         public string GarenaDefPath = "";
         public string SALT = "";
+        public int CleanerInterval = 0;
         public int cpuCount = 0;
         public NCHandler NCHandler = new NCHandler();
         private Style BlueStyle = new TextStyle(Brushes.DarkCyan, null, FontStyle.Bold);
@@ -80,6 +87,8 @@ namespace BnSBuddy2
             materialSkinManager.AddFormToManage(this);
             // Start Loading Form
             StartLoading(true);
+            // Ini WebView2
+            NCHandler.StartWebView2();
             // Set Universal Culture
             CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US", false);
             // Read and Apply Settings
@@ -117,7 +126,7 @@ namespace BnSBuddy2
             // Handle Addons
             PopulateAddons();
             // Class Toggles
-            // CheckClassToggles(); // Needs rework for PAK
+            CheckClassToggles();
             // Check AMD ULPS
             ULPS.CheckULPS();
             // Check FTH
@@ -143,7 +152,7 @@ namespace BnSBuddy2
 
         // Client Executeable location
         private void FindExeFile() =>
-            ExecuteableFile.ReturnExecFileLocation(materialComboBox2.SelectedItem.ToString());
+            ExecuteableFile.ReturnExecFileLocation(materialComboBox2.SelectedItem);
 
         // Client Pathing
         private void FindGameDir() =>
@@ -151,11 +160,11 @@ namespace BnSBuddy2
 
         // Splash Pathing per language
         private void FindSplashDir() =>
-            SplashPaths.ReturnSplashPath(materialComboBox2.SelectedItem.ToString(), materialComboBox3.SelectedItem.ToString());
+            SplashPaths.ReturnSplashPath(materialComboBox2.SelectedItem, materialComboBox3.SelectedItem);
 
         // Pak Pathing
         private void FindPakDir() =>
-            PakPaths.ReturnPakPath(materialComboBox2.SelectedItem.ToString());
+            PakPaths.ReturnPakPath(materialComboBox2.SelectedItem);
 
         // Launcher Pathing
         private void FindLauncherDir()
@@ -196,6 +205,10 @@ namespace BnSBuddy2
                 Size = new Size(985, 670);
                 AppStarted = true;
                 TopMost = true;
+
+                // Check if any server is selected
+                if (materialComboBox2.SelectedIndex < 0)
+                    materialComboBox2.SelectedIndex = 0;
             }
         }
 
@@ -204,7 +217,7 @@ namespace BnSBuddy2
         {
             Control.CheckForIllegalCrossThreadCalls = false;
             Loading loading = new Loading();
-            materialSkinManager.AddFormToManage(loading);
+            //materialSkinManager.AddFormToManage(loading);
             System.Threading.Tasks.Task.Delay(0).ContinueWith(delegate
             {
                 Control.CheckForIllegalCrossThreadCalls = false;
@@ -243,8 +256,16 @@ namespace BnSBuddy2
         //
 
         // Force close buddy on close
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e) =>
-            KillApp();
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (materialSwitch56.Checked)
+            {
+                e.Cancel = true;
+                this.WindowState = FormWindowState.Minimized;
+            }
+            else
+                KillApp();
+        }
 
         // Check Live Process and Capture, reset UI if all dead
         private void CheckProcesses_Tick(object sender, EventArgs e) =>
@@ -256,6 +277,16 @@ namespace BnSBuddy2
             Show();
             WindowState = FormWindowState.Normal;
             notifyIcon1.Visible = materialSwitch43.Checked;
+        }
+
+        // Tray Icon Click Handler
+        public void notifyIcon1_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+                toolStripMenuItem1_Click(sender, e);
+            TopMost = true;
+            Refresh();
+            TopMost = false;
         }
 
         // Close App Button (Tray Context)
@@ -338,7 +369,7 @@ namespace BnSBuddy2
                     str = x.InnerException.Message.Replace(t_user, "[censored]");
                 string str2 = x.ToString().Replace(t_user, "[censored]");
                 string str3 = x.StackTrace.ToString().Replace(t_user, "[censored]");
-                Prompt.Popup("An application error occurred. Please contact Endless and report this error!" + Environment.NewLine + "Error: " + str + Environment.NewLine + "InnerException: " + str2 + Environment.NewLine + "StackTrace: " + str3);
+                Prompt.Popup("An application error occurred. Please contact Endless and report this error!\r\nBnS Buddy Version: " + Application.ProductVersion + Environment.NewLine + "Error: " + str + Environment.NewLine + "InnerException: " + str2 + Environment.NewLine + "StackTrace: " + str3);
             }
             catch (Exception ex)
             {
@@ -364,7 +395,7 @@ namespace BnSBuddy2
             try
             {
                 string str = t.Exception.ToString().Replace(Path.GetFileName(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)), "[censored]");
-                Prompt.Popup("Report this error to Endless along with a screenshot, thank you!" + Environment.NewLine + str);
+                Prompt.Popup("Report this error to Endless along with a screenshot, thank you!\r\nBnS Buddy Version: " + Application.ProductVersion + Environment.NewLine + str);
             }
             catch
             {
@@ -411,9 +442,19 @@ namespace BnSBuddy2
             materialMultiLineTextBox1.Refresh();
         }
 
+        // Language Combobox
+        private void materialComboBox3_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (AppStarted)
+                FindSplashDir();
+        }
+
         // Play Button
-        private void PlayButton_Click(object sender, EventArgs e) =>
-            Game.PlayGame(true, "", "", materialComboBox2.SelectedItem.ToString());
+        private void PlayButton_Click(object sender, EventArgs e)
+        {
+            string region = materialComboBox2.SelectedItem.ToString();
+            Game.PlayGame(true, "", "", region);
+        }
 
         // Manage Sessions Button
         private void materialButton2_Click(object sender, EventArgs e)
@@ -443,18 +484,57 @@ namespace BnSBuddy2
             Pinger.PingStatus(materialLabel8.Text);
 
         // Save and set new server
+        public bool _noise = false;
         private void materialComboBox2_SelectedIndexChanged(object sender, EventArgs e)
         {
-            string region = materialComboBox2.SelectedItem.ToString();
-            Pinger.PingRegionChange(region);
-            materialComboBox4.Visible = (region == "Korean");
-            if (materialComboBox4.Visible)
-                materialComboBox4.SelectedIndex = 0;
-            NCHandler.LauncherInfo(region);
+            if (_noise) { _noise = false; return; }
+            // Get Sender Control
+            // Prompt.Popup($"[Debug] Type: {sender.GetType()} | Value: {sender.ToString()}");
+            var _sender = sender as MaterialComboBox;
+            if (AppStarted || (materialComboBox2.SelectedItem != null && !AppStarted))
+            {
+                string region = materialComboBox2.SelectedItem.ToString();
+                bool multi = (region == "Korean" || region == "North America" || region == "Europe" || region == "Taiwan" || region == "Japanese" || region == "Steam NA" || region == "Steam EU");
+                if (_sender == materialComboBox2)
+                {
+                    materialComboBox4.Visible = (region == "Korean" || region == "North America" || region == "Europe" || region == "Taiwan" || region == "Japanese" || region == "Steam NA" || region == "Steam EU");
+                    materialComboBox4.SelectedIndex = -1;
+                    materialComboBox4.Items.Clear();
+                    materialComboBox4.Refresh();
+                    if (multi && (_sender.Text == "Korean" || _sender.Text == "North America" || _sender.Text == "Europe" || _sender.Text == "Taiwan" || _sender.Text == "Japanese" || _sender.Text == "Steam NA") || _sender.Text == "Steam EU")
+                    {
+                        // Repopulate server list
+                        foreach (var item in ClientPaths.Installs)
+                            if (item.Key.Contains(_sender.Text.Replace("North America", "NA/EU").Replace("Europe", "NA/EU").Replace("Steam NA", "Steam Neo").Replace("Steam EU", "Steam Neo")))
+                                if (!materialComboBox4.Items.Contains(item.Key.Replace(_sender.Text + " ", "").Replace("NA/EU ", "").Replace("Steam ", "")))
+                                    materialComboBox4.Items.Add(item.Key.Replace(_sender.Text + " ", "").Replace("NA/EU ", "").Replace("Steam ", ""));
+                    }
+                    if (multi && AppStarted && materialComboBox4.SelectedIndex < 0)
+                        materialComboBox4.SelectedIndex = 0;
+                }
+                if (materialComboBox4.SelectedIndex < 0 && multi)
+                    return;
+                // Setup new Values and Save Selected Server
+                Step2_SelectedClient(region);
+            }
+        }
+
+        private void Step2_SelectedClient(string region)
+        {
+            // Setup new Values and Save Selected Server
             string _region = RegionConvert.Convert(region);
+            Pinger.PingRegionChange(region);
+            NCHandler.LauncherInfo(region);
             RedoPaths(region); // Reset paths and items
+            DelayedTasks.LoaderChecker();
             if (ClientPaths.Installs.ContainsKey(_region))
-                routineChanger("lastserver", materialComboBox2.SelectedItem.ToString());
+            {
+                // Multi Support
+                if (region == "Korean" || region == "North America" || region == "Europe" || region == "Taiwan" || region == "Japanese" || region == "Steam NA" || region == "Steam EU" && materialComboBox4.SelectedItem != null)
+                    routineChanger("lastserver", materialComboBox2.SelectedItem.ToString() + " " + materialComboBox4.SelectedItem.ToString());
+                else
+                    routineChanger("lastserver", materialComboBox2.SelectedItem.ToString());
+            }
         }
 
         // Add logs to launcher textbox
@@ -468,7 +548,7 @@ namespace BnSBuddy2
             else if (logger)
                 materialMultiLineTextBox4.AppendText(tmp + Environment.NewLine);
             if (materialSwitch36.Checked && materialSwitch17.Checked)
-                File.WriteAllText(AppPath + "\\Launcher_logs.txt", materialMultiLineTextBox1.Text);
+                System.IO.File.WriteAllText(AppPath + "\\Launcher_logs.txt", materialMultiLineTextBox1.Text);
         }
 
         // Use All Cores Toggle
@@ -482,6 +562,22 @@ namespace BnSBuddy2
         // Unattended Toggle
         private void materialCheckbox2_CheckedChanged(object sender, EventArgs e) =>
             routineChanger("unattended", materialCheckbox2.Checked.ToString().ToLower());
+
+        // AutoCleaner Timer
+        private void AutoCleanerTimer_Tick(object sender, EventArgs e)
+        {
+            Task.Delay(50).ContinueWith(delegate
+            {
+                if (ActiveSessions.GetActiveClientCount() > 0)
+                    MemoryCleaner.CleanMem();
+                else
+                {
+                    AutoCleanerTimer.Enabled = false;
+                    foreach (string user in ActiveSessions.DiedClients)
+                        AddLauncherLog(user + "'s Game Process Died");
+                }
+            });
+        }
 
         //
         // End Launcher tab page
@@ -540,7 +636,7 @@ namespace BnSBuddy2
             if (materialSwitch37.Checked)
                 materialMultiLineTextBox3.AppendText(tmp + Environment.NewLine);
             if (materialSwitch36.Checked && materialSwitch35.Checked)
-                File.WriteAllText(AppPath + "\\ModManager_logs.txt", materialMultiLineTextBox3.Text);
+                System.IO.File.WriteAllText(AppPath + "\\ModManager_logs.txt", materialMultiLineTextBox3.Text);
         }
 
         //
@@ -677,16 +773,12 @@ namespace BnSBuddy2
         }
 
         // Reset Colors
-        private void materialButton6_Click(object sender, EventArgs e)
-        {
+        private void materialButton6_Click(object sender, EventArgs e) =>
             themeing.ResetColors();
-        }
 
         // Save colors
-        private void materialButton7_Click(object sender, EventArgs e)
-        {
+        private void materialButton7_Click(object sender, EventArgs e) =>
             themeing.SaveColors();
-        }
 
         //
         // End Color controls
@@ -783,6 +875,10 @@ namespace BnSBuddy2
             }
         }
 
+        // Close to tray Toggle
+        private void materialSwitch56_CheckedChanged(object sender, EventArgs e) =>
+            routineChanger("closetotray", materialSwitch56.Checked.ToString().ToLower());
+
         // Custom Client Path Toggle
         private void materialSwitch15_CheckedChanged(object sender, EventArgs e)
         {
@@ -845,7 +941,7 @@ namespace BnSBuddy2
         {
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
             if (folderBrowserDialog.ShowDialog().ToString() == "OK")
-                if (Directory.Exists(folderBrowserDialog.SelectedPath + "\\Download") || File.Exists(folderBrowserDialog.SelectedPath + "\\Matryoshka.exe"))
+                if (Directory.Exists(folderBrowserDialog.SelectedPath + "\\Download") || System.IO.File.Exists(folderBrowserDialog.SelectedPath + "\\Matryoshka.exe"))
                     materialTextBox2.Text = folderBrowserDialog.SelectedPath;
                 else
                     Prompt.Popup("Error: Invalid Path! Browse for NCLauncher Folder. | Path: " + folderBrowserDialog.SelectedPath);
@@ -1017,8 +1113,20 @@ namespace BnSBuddy2
             routineChanger("automemorycleanup", materialSwitch52.Checked.ToString().ToLower());
 
         // Save Interval for memory cleaner
-        private void materialComboBox7_SelectedIndexChanged(object sender, EventArgs e) =>
+        private void materialComboBox7_SelectedIndexChanged(object sender, EventArgs e)
+        {
             routineChanger("cleanint", materialComboBox7.SelectedItem.ToString());
+            if (materialComboBox7.SelectedItem.ToString() == "OFF")
+            {
+                AutoCleanerTimer.Enabled = false;
+            }
+            else if (materialSwitch52.Checked)
+            {
+                CleanerInterval = int.Parse(materialComboBox7.SelectedItem.ToString()) * 60000;
+                AutoCleanerTimer.Interval = CleanerInterval;
+                AutoCleanerTimer.Enabled = true;
+            }
+        }
 
         // Boost Process Priority Toggle
         private void materialSwitch53_CheckedChanged(object sender, EventArgs e) =>
@@ -1095,17 +1203,97 @@ namespace BnSBuddy2
         private void materialSwitch45_CheckedChanged(object sender, EventArgs e)
         {
             if (!BuddyLoaded) return;
-            RegistryKey rk = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-            if (materialSwitch45.Checked)
-                rk.SetValue(_Process.GetCurrentProcess().ProcessName, Application.ExecutablePath);
-            else
-                rk.DeleteValue(_Process.GetCurrentProcess().ProcessName, false);
+            CreateShortcut(materialSwitch45.Checked);
             routineChanger("startwWindows", materialSwitch45.Checked.ToString().ToLower());
+        }
+
+        private void CreateShortcut(bool create = true)
+        {
+            if (create)
+            {
+                /* This bit was taken by stackoverflow */
+                WshShell wshShell = new WshShell();
+                IWshShortcut shortcut;
+                string startUpFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+
+                // Create the shortcut
+                shortcut =
+                  (IWshShortcut)wshShell.CreateShortcut(
+                    startUpFolderPath + "\\" +
+                    Application.ProductName + ".lnk");
+
+                shortcut.TargetPath = Application.ExecutablePath;
+                shortcut.WorkingDirectory = Application.StartupPath;
+                shortcut.Description = "BnS Buddy";
+                //shortcut.IconLocation = Application.StartupPath + @"\App.ico";
+                shortcut.Save();
+                /* End of said bit */
+            }
+            else
+            {
+                // Delete startup shortcut
+                System.IO.File.Delete(Environment.GetFolderPath(Environment.SpecialFolder.Startup) + "\\" + Application.ProductName + ".lnk");
+            }
         }
 
         bool BuddyLoaded = false;
         // Trigger to ready changes when form shown
-        private void Form1_Shown(object sender, EventArgs e) { BuddyLoaded = true; TopMost = false; Refresh(); }
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            BuddyLoaded = true;
+            TopMost = false;
+            LayoutDatEditorStatusBar();
+            Refresh();
+        }
+
+        /// <summary>
+        /// Keep Dat Editor status strip pinned to the bottom and clear of the text/tree views.
+        /// Anchored StatusStrip controls often disappear under MaterialSkin tab pages.
+        /// </summary>
+        private void LayoutDatEditorStatusBar()
+        {
+            if (panelDatStatus == null || Dat_Editor == null || Dat_Editor.IsDisposed)
+            {
+                return;
+            }
+
+            const int statusHeight = 26;
+            const int pad = 4;
+            int clientW = Dat_Editor.ClientSize.Width;
+            int clientH = Dat_Editor.ClientSize.Height;
+            if (clientW <= 0 || clientH <= 0)
+            {
+                return;
+            }
+
+            panelDatStatus.Visible = true;
+            panelDatStatus.Height = statusHeight;
+            panelDatStatus.Left = pad;
+            panelDatStatus.Width = Math.Max(50, clientW - pad * 2);
+            panelDatStatus.Top = Math.Max(0, clientH - statusHeight - pad);
+            panelDatStatus.BringToFront();
+
+            int bottomLimit = panelDatStatus.Top - 2;
+            if (fastColoredTextBox1 != null && !fastColoredTextBox1.IsDisposed)
+            {
+                int h = bottomLimit - fastColoredTextBox1.Top;
+                if (h > 80)
+                {
+                    fastColoredTextBox1.Height = h;
+                }
+            }
+            if (treeView1 != null && !treeView1.IsDisposed)
+            {
+                int h = bottomLimit - treeView1.Top;
+                if (h > 80)
+                {
+                    treeView1.Height = h;
+                }
+            }
+        }
+
+        private void Dat_Editor_Resize(object sender, EventArgs e) =>
+            LayoutDatEditorStatusBar();
 
         // Auto Game Catcher Toggle
         private void materialSwitch46_CheckedChanged(object sender, EventArgs e) =>
@@ -1124,8 +1312,17 @@ namespace BnSBuddy2
         private void materialSwitch54_CheckedChanged(object sender, EventArgs e) =>
             routineChanger("affinityman", materialSwitch54.Checked.ToString().ToLower());
 
+        // Update Checker Toggle
         private void materialSwitch57_CheckedChanged(object sender, EventArgs e) =>
             routineChanger("updatechecker", materialSwitch57.Checked.ToString().ToLower());
+
+        // Purple Login Toggle
+        private void materialSwitch62_CheckedChanged(object sender, EventArgs e) =>
+            routineChanger("purplesimulation", materialSwitch62.Checked.ToString().ToLower());
+
+        // Auto Restore Window on Game Closed Toggle
+        private void materialSwitch63_CheckedChanged(object sender, EventArgs e) =>
+            routineChanger("autorestore", materialSwitch63.Checked.ToString().ToLower());
 
         //
         // End Settings Page
@@ -1136,9 +1333,25 @@ namespace BnSBuddy2
         //
 
         // Home Globals
-        public string readids = "";
         public msghandler.Inbox Inboxer = new msghandler.Inbox();
         // End Home Globals
+
+        // INI Editor Button
+        private void materialButton61_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            INIChoose inieditorUI = new INIChoose();
+            inieditorUI.ShowDialog();
+            this.Show();
+        }
+
+        // Inbox Button
+        private void materialButton57_Click(object sender, EventArgs e) =>
+            HomeHandler.InboxAction(materialListBox2.Visible);
+
+        // ListBox Selected Inbox
+        private void materialListBox2_SelectedIndexChanged(object sender, MaterialListBoxItem selectedItem) =>
+            HomeHandler.OpenSelectedInbox(materialListBox2.SelectedItem);
 
         // Flash Inbox Button
         private void FlashInbox_Tick(object sender, EventArgs e)
@@ -1189,11 +1402,181 @@ namespace BnSBuddy2
         // Extras Page
         //
 
+        // Block NCGTMP Button
+        private void materialButton63_Click(object sender, EventArgs e) =>
+            BlockNCGTemp.BlockNCG();
+
+        // Unblock NCGTMP Button
+        private void materialButton64_Click(object sender, EventArgs e) =>
+            BlockNCGTemp.UnblockNCG();
+
+        // Access Database Button
+        private void materialButton62_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            OnlineFetchUI onlineFetchUi = new OnlineFetchUI();
+            onlineFetchUi.ShowDialog();
+            this.Show();
+        }
+
+        // Disable all Animations Button
+        private void materialButton10_Click(object sender, EventArgs e)
+        {
+            ToggleAction._ToggleAll("Animations", false);
+            materialButton9.Enabled = true;
+            materialButton10.Enabled = false;
+        }
+
+        // Enable all Animations Button
+        private void materialButton9_Click(object sender, EventArgs e)
+        {
+            ToggleAction._ToggleAll("Animations", true);
+            materialButton9.Enabled = false;
+            materialButton10.Enabled = true;
+        }
+
+        // Enable all Effects Button
+        private void materialButton11_Click(object sender, EventArgs e)
+        {
+            ToggleAction._ToggleAll("Effects", true);
+            materialButton11.Enabled = false;
+            materialButton12.Enabled = true;
+        }
+
+        // Diasble all Effects Button
+        private void materialButton12_Click(object sender, EventArgs e)
+        {
+            ToggleAction._ToggleAll("Effects", false);
+            materialButton11.Enabled = true;
+            materialButton12.Enabled = false;
+        }
+
+        // Help Button Toggles
+        private void materialButton13_Click(object sender, EventArgs e) =>
+        Prompt.Popup("If some toggles aren't clickable, you lost the backup files." + Environment.NewLine + "Please do a filescan/repair to restore missing files.");
+
+        // Assassin Animations Toggle
+        private void materialSwitch4_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Assassin", "Animations", materialSwitch4);
+
+        // Assassin Effects Toggle
+        private void materialSwitch13_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Assassin", "Effects", materialSwitch13);
+
+        // Summoner Animations Toggle
+        private void materialSwitch23_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Summoner", "Animations", materialSwitch23);
+
+        // Summoner Effects Toggle
+        private void materialSwitch12_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Summoner", "Effects", materialSwitch12);
+
+        // Kung-Fu Master Animations Toggle
+        private void materialSwitch22_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Kung-Fu Master", "Animations", materialSwitch22);
+
+        // Kung-Fu Master Effects Toggle
+        private void materialSwitch11_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Kung-Fu Master", "Effects", materialSwitch11);
+
+        // Gunslinger Animations Toggle
+        private void materialSwitch21_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Gunslinger", "Animations", materialSwitch21);
+
+        // Gunslinger Effects Toggle
+        private void materialSwitch10_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Gunslinger", "Effects", materialSwitch10);
+
+        // Destroyer Animations Toggle
+        private void materialSwitch20_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Destroyer", "Animations", materialSwitch20);
+
+        // Destroyer Effects Toggle
+        private void materialSwitch9_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Destroyer", "Effects", materialSwitch9);
+
+        // Warden Animations Toggle
+        private void materialSwitch19_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Warden", "Animations", materialSwitch19);
+
+        // Warden Effects Toggle
+        private void materialSwitch8_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Warden", "Effects", materialSwitch8);
+
+        // Astromancer Animations Toggle
+        private void materialSwitch18_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Astromancer", "Animations", materialSwitch18);
+
+        // Astromancer Effects Toggle
+        private void materialSwitch7_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Astromancer", "Effects", materialSwitch7);
+
+        // Dual Blade Animations Toggle
+        private void materialSwitch60_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Dual Blade", "Animations", materialSwitch60);
+
+        // Dual Blade Effects Toggle
+        private void materialSwitch61_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Dual Blade", "Effects", materialSwitch61);
+
+        // Force Master Animations Toggle
+        private void materialSwitch14_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Force Master", "Animations", materialSwitch14);
+
+        // Force Master Effects Toggle
+        private void materialSwitch24_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Force Master", "Effects", materialSwitch24);
+
+        // Blade Master Animations Toggle
+        private void materialSwitch25_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Blade Master", "Animations", materialSwitch25);
+
+        // Blade Master Effects Toggle
+        private void materialSwitch26_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Blade Master", "Effects", materialSwitch26);
+
+        // Blade Dancer Animations Toggle
+        private void materialSwitch27_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Blade Dancer", "Animations", materialSwitch27);
+
+        // Blade Dancer Effects Toggle
+        private void materialSwitch28_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Blade Dancer", "Effects", materialSwitch28);
+
+        // Warlock Animations Toggle
+        private void materialSwitch29_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Warlock", "Animations", materialSwitch29);
+
+        // Warlock Effects Toggle
+        private void materialSwitch30_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Warlock", "Effects", materialSwitch30);
+
+        // Soul Fighter Animations Toggle
+        private void materialSwitch31_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Soul Fighter", "Animations", materialSwitch31);
+
+        // Soul Fighter Effects Toggle
+        private void materialSwitch32_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Soul Fighter", "Effects", materialSwitch32);
+
+        // Archer Animations Toggle
+        private void materialSwitch33_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Archer", "Animations", materialSwitch33);
+
+        // Archer Effects Toggle
+        private void materialSwitch34_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Archer", "Effects", materialSwitch34);
+
+        // Extras Effects Toggle
+        private void materialSwitch6_CheckedChanged(object sender, EventArgs e) =>
+            ToggleAction._ToggleAction("Extras", "Effects", materialSwitch6);
+
         // Check Toggle Status
         private void CheckClassToggles()
         {
-            StartupToggles = new ClassToggles.Startup(materialComboBox2.SelectedItem.ToString());
-            ToggleAction = new ClassToggles.ToggleAction(materialComboBox2.SelectedItem.ToString());
+            StartupToggles = new ClassToggles.Startup();
+            ToggleAction = new ClassToggles.ToggleAction();
+            StartupToggles._Startup();
         }
 
         // Compatibility Warning
@@ -1339,11 +1722,33 @@ namespace BnSBuddy2
         private void materialButton28_Click(object sender, EventArgs e) =>
             PAK.PakHandler.PakRepack(PAK.PakHandler.ExtractedDir);
 
-        // Report Progress
+        // Report Progress (Dat Editor status bar)
         public void SortOutputHandler(string text)
         {
-            materialLabel42.Text = "Status: " + text;
-            materialLabel42.Refresh();
+            if (materialLabel42 == null)
+            {
+                return;
+            }
+            string status = "Status: " + text;
+            void Apply()
+            {
+                materialLabel42.Text = status;
+                materialLabel42.Visible = true;
+                if (panelDatStatus != null)
+                {
+                    panelDatStatus.Visible = true;
+                    panelDatStatus.BringToFront();
+                }
+                materialLabel42.Refresh();
+            }
+            if (materialLabel42.InvokeRequired)
+            {
+                materialLabel42.BeginInvoke(new Action(Apply));
+            }
+            else
+            {
+                Apply();
+            }
         }
 
         // After select dat
@@ -1352,7 +1757,7 @@ namespace BnSBuddy2
 
         // After select xml/x16
         private void treeView1_AfterSelect(object sender, TreeViewEventArgs e) =>
-            Pilao.TreeViewHandler.ReadSelectedFile(e.Node, materialComboBox5.SelectedItem.ToString());
+            Pilao.TreeViewHandler.ReadSelectedFile(e.Node, materialComboBox5.SelectedItem);
 
         // Backup Button
         private void materialButton18_Click(object sender, EventArgs e) =>
@@ -1417,6 +1822,30 @@ namespace BnSBuddy2
         // License Context Menu
         private void treeView1_MouseClick(object sender, TreeNodeMouseClickEventArgs e) =>
             Pilao.FastColoredHandler.DatHandler.LicenseContextMenuPop(e);
+
+        // License Context Menu | Get Key Information Button
+        private void toolStripMenuItem5_Click(object sender, EventArgs e) =>
+            Pilao.FastColoredHandler.DatHandler.KeyInfo();
+
+        // License Context Menu | File Unpack Button
+        private void toolStripMenuItem3_Click(object sender, EventArgs e) =>
+            Pilao.FastColoredHandler.DatHandler.FileUnpackButton();
+
+        // License Context Menu | File Repack Button
+        private void toolStripMenuItem4_Click(object sender, EventArgs e) =>
+            Pilao.FastColoredHandler.DatHandler.FileRepackButton();
+
+        // License Context Menu | Browse to Button
+        private void toolStripMenuItem6_Click(object sender, EventArgs e) =>
+            Pilao.FastColoredHandler.DatHandler.BrowseToButton();
+
+        // License Context Menu | Open selected bin in editor
+        private void toolStripMenuItem8_Click(object sender, EventArgs e) =>
+            Pilao.FastColoredHandler.DatHandler.OpenBinEditorButton();
+
+        // Dat Editor toolbar | Bin Editor
+        private void materialButton65_Click(object sender, EventArgs e) =>
+            LegacyBin.BinHandler.OpenBinEditor();
 
         //
         // End Dat Editor Page

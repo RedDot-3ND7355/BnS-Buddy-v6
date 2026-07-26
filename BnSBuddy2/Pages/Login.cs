@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -53,6 +52,12 @@ namespace BnSBuddy2.Pages
             ready = true;
         }
 
+        private void CheckAutoLogin()
+        {
+            if (autologinapproved && Form1.CurrentForm.materialSwitch49.Checked)
+                Perform();
+        }
+
         private bool CheckIfAny()
         {
             string[] subKeyNames = defaultKey.GetSubKeyNames();
@@ -94,7 +99,7 @@ namespace BnSBuddy2.Pages
                     {
                         try
                         {
-                            Regex regex = new Regex(@"^[\w\.\-]+@[\w\-]+(?:\.\w{2,5})+$");
+                            Regex regex = new Regex(@"^.*$");
                             Match match = regex.Match(materialTextBox1.Text);
                             if (match.Success)
                             {
@@ -120,7 +125,9 @@ namespace BnSBuddy2.Pages
                             Prompt.Popup(ex.ToString());
                         }
                     }
-                    Hide();
+
+                    materialTextBox1.Text = "";
+                    materialTextBox2.Text = "";
                     Close();
                 }
                 catch
@@ -156,14 +163,18 @@ namespace BnSBuddy2.Pages
                 materialLabel3.Visible = false;
         }
 
-        private void PopulateTree(RegistryKey regKey)
+        private void PopulateTree()
         {
             var user = new functions().GetUserListByRegion(materialComboBox1.SelectedItem.ToString());
             foreach (string md5 in user.Keys)
             {
-                materialComboBox2.Items.Add(user[md5][0]);
-                CurrentList.Add(user[md5][0], md5);
+                if (!materialComboBox2.Items.Contains(user[md5][0]))
+                {
+                    materialComboBox2.Items.Add(user[md5][0]);
+                    CurrentList.Add(user[md5][0], md5);
+                }
             }
+            materialComboBox2.Refresh();
         }
 
         private void PopulateRegions()
@@ -173,7 +184,7 @@ namespace BnSBuddy2.Pages
             // Add all
             materialComboBox1.Items.AddRange(Form1.CurrentForm.materialComboBox2.Items.Cast<Object>().ToArray());
             // Remove incompatible
-            materialComboBox1.Items.Remove("Japanese");
+            // materialComboBox1.Items.Remove("Japanese");
             materialComboBox1.Items.Remove("Russia");
             materialComboBox1.Items.Remove("Garena");
             materialComboBox1.Items.Remove("Chinese");
@@ -181,7 +192,7 @@ namespace BnSBuddy2.Pages
             materialComboBox1.Items.Remove("North America");
             materialComboBox1.Items.Remove("Europe");
             // Select default region
-            if ((Form1.CurrentForm.materialComboBox2.SelectedItem.ToString() == "North America" || Form1.CurrentForm.materialComboBox2.SelectedItem.ToString() == "Europe"))
+            if ((Form1.CurrentForm.materialComboBox2.SelectedItem.ToString() == "North America" || Form1.CurrentForm.materialComboBox2.SelectedItem.ToString() == "Europe" || Form1.CurrentForm.materialComboBox2.SelectedItem.ToString() == "Purple"))
                 materialComboBox1.SelectedIndex = materialComboBox1.FindString("NA/EU");
             else
                 materialComboBox1.SelectedIndex = materialComboBox1.FindString(Form1.CurrentForm.materialComboBox2.SelectedItem.ToString());
@@ -225,7 +236,7 @@ namespace BnSBuddy2.Pages
         private void GetLastUsedIfAny(bool isremembered)
         {
             if (isremembered)
-                PopulateTree(defaultKey);
+                PopulateTree();
         }
 
         private bool CheckRememberMe()
@@ -297,7 +308,7 @@ namespace BnSBuddy2.Pages
                 CurrentList = new Dictionary<string, string>();
                 materialComboBox2.Items.Clear();
                 if (CheckRememberMe())
-                    PopulateTree(defaultKey);
+                    PopulateTree();
                 if (materialComboBox2.Items.Count > 0)
                     materialComboBox2.SelectedIndex = 0;
             }
@@ -323,6 +334,9 @@ namespace BnSBuddy2.Pages
         // Sign in Button
         private void materialButton2_Click(object sender, EventArgs e) =>
             Perform();
-        
+
+        // Auto Login
+        private void Login_Shown(object sender, EventArgs e) =>
+            Task.Delay(50).ContinueWith(x => CheckAutoLogin());
     }
 }

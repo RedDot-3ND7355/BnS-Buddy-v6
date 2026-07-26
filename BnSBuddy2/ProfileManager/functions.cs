@@ -2,8 +2,10 @@
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web.Security;
 
 namespace BnSBuddy2.ProfileManager
@@ -169,8 +171,10 @@ namespace BnSBuddy2.ProfileManager
             string[] AccountHashes = localMachine.GetSubKeyNames();
             foreach (string md5 in AccountHashes)
             {
+                Regex myRegex = new Regex("^[a-fA-F0-9]+$");
+                bool boolean = myRegex.IsMatch(md5);
                 RegistryKey tmpkey = Registry.LocalMachine.OpenSubKey("SOFTWARE\\BnS Buddy\\" + md5, writable: true);
-                if (tmpkey != null && tmpkey.GetValue("region") != null)
+                if (tmpkey != null && boolean && tmpkey.GetValue("region") != null)
                 {
                     List<string> info = new List<string>();
                     if (tmpkey.GetValue("username") != null)

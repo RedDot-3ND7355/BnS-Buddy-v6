@@ -10,11 +10,13 @@ namespace BnSBuddy2.Pathing
         // End Globlas
 
         // Return exec path
-        public void ReturnExecFileLocation(string region)
+        public void ReturnExecFileLocation(object region)
         {
-            region = RegionConvert.Convert(region);
-            ExecFolder = Form1.CurrentForm.ClientPaths.Installs[region] + "BNSR\\Binaries\\Win64\\";
-            ExecPath = Form1.CurrentForm.ClientPaths.Installs[region] + "BNSR\\Binaries\\Win64\\BNSR.exe";
+            if (region == null)
+                return;
+            region = RegionConvert.Convert(region.ToString());
+            ExecFolder = Form1.CurrentForm.ClientPaths.Installs[region.ToString()] + "BNSR\\Binaries\\Win64\\";
+            ExecPath = Form1.CurrentForm.ClientPaths.Installs[region.ToString()] + "BNSR\\Binaries\\Win64\\BNSR.exe";
         }
     }
 }

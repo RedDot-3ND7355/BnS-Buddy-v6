@@ -33,20 +33,15 @@ public class bcrypt
         {
             return string.Empty;
         }
-        string result = "";
-        /*
-        for (var pos = 0; pos < bytes.Length; pos += 4)
+        string text = "";
+        int num = 0;
+        num = ((bytes.Length % 4 == 0) ? bytes.Length : (bytes.Length / 4 * 4));
+        for (int i = 0; i < num; i += 4)
         {
-            int x = bytes[pos] | (bytes[pos + 1] << 8) | (bytes[pos + 2] << 16) | (bytes[pos + 3] << 24);
-            result += x + ",";
+            int num2 = bytes[i] | (bytes[i + 1] << 8) | (bytes[i + 2] << 16) | (bytes[i + 3] << 24);
+            text = text + num2 + ",";
         }
-        */
-        BinaryReader br = new BinaryReader(new MemoryStream(bytes));
-        while (br.BaseStream.Position < (br.BaseStream.Length))
-        {
-            result += br.ReadInt32() + ",";
-        }
-        return result.TrimEnd(',');
+        return text.TrimEnd(',');
     }
     public static string BytesToHex(byte[] bytes, uint size)
     {
@@ -67,21 +62,27 @@ public class bcrypt
     public static byte[] IntToBytes(string input, uint size)
     {
         byte[] result = new byte[0];
-            int[] intArray = Array.ConvertAll(input.Split(','), int.Parse);
-            result = new byte[intArray.Length * sizeof(int)];
-            Buffer.BlockCopy(intArray, 0, result, 0, result.Length);
+        int[] intArray = Array.ConvertAll(input.Split(','), int.Parse);
+        result = new byte[intArray.Length * sizeof(int)];
+        Buffer.BlockCopy(intArray, 0, result, 0, result.Length);
         return result;
     }
     public static byte[] HexToBytes(string input, uint size)
     {
-        var outputLength = input.Length / 2;
-        var output = new byte[outputLength];
-        using (var sr = new StringReader(input))
+        int num = input.Length / 2;
+        byte[] array = new byte[num];
+        using (StringReader stringReader = new StringReader(input))
         {
-            for (var i = 0; i < outputLength; i++)
-                output[i] = Convert.ToByte(new string(new char[2] { (char)sr.Read(), (char)sr.Read() }), 16);
+            for (int i = 0; i < num; i++)
+            {
+                array[i] = Convert.ToByte(new string(new char[2]
+                {
+                    (char)stringReader.Read(),
+                    (char)stringReader.Read()
+                }), 16);
+            }
         }
-        return output;
+        return array;
     }
     public static string BytesToHex1(byte[] buffer, uint size)
     {
@@ -89,18 +90,18 @@ public class bcrypt
         {
             return string.Empty;
         }
-        byte[] bytes = new byte[(3 * size) - 1];
-        for (uint i = 0; i < size; i++)
+        byte[] array = new byte[3 * size - 1];
+        for (uint num = 0u; num < size; num++)
         {
-            string str = string.Format("{0:X2}", buffer[i]);
-            bytes[(int)((IntPtr)(3 * i))] = (byte)str[0];
-            bytes[(int)((IntPtr)((3 * i) + 1))] = (byte)str[1];
-            if (i < (size - 1))
+            string text = $"{buffer[num]:X2}";
+            array[(int)(IntPtr)(3 * num)] = (byte)text[0];
+            array[(int)(IntPtr)(3 * num + 1)] = (byte)text[1];
+            if (num < size - 1)
             {
-                bytes[(int)((IntPtr)((3 * i) + 2))] = 0x2d;
+                array[(int)(IntPtr)(3 * num + 2)] = 45;
             }
         }
-        return Encoding.ASCII.GetString(bytes);
+        return Encoding.ASCII.GetString(array);
     }
 
     public static byte[] Deflate(byte[] buffer, int sizeCompressed, int sizeDecompressed)
@@ -117,42 +118,53 @@ public class bcrypt
             return null;
         }
         byte[] bytes = Encoding.ASCII.GetBytes(buffer);
-        byte[] buffer3 = new byte[(bytes.Length + 1) / 3];
-        for (uint i = 0; i < size; i++)
+        byte[] array = new byte[(bytes.Length + 1) / 3];
+        for (uint num = 0u; num < size; num++)
         {
-            string s = ((char)bytes[(int)((IntPtr)(3 * i))]) + string.Empty + ((char)bytes[(int)((IntPtr)((3 * i) + 1))]);
-            buffer3[i] = byte.Parse(s, NumberStyles.HexNumber);
+            char c = (char)bytes[(int)(IntPtr)(3 * num)];
+            string text = c.ToString();
+            string empty = string.Empty;
+            c = (char)bytes[(int)(IntPtr)(3 * num + 1)];
+            string s = text + empty + c;
+            array[num] = byte.Parse(s, NumberStyles.HexNumber);
         }
-        return buffer3;
+        return array;
     }
 
     public static byte[] Inflate(byte[] buffer, uint sizeDecompressed, ref uint sizeCompressed, uint compressionLevel)
     {
-        byte[] buffer2 = null;
-        using (MemoryStream stream = new MemoryStream((int)sizeDecompressed))
+        byte[] array = null;
+        using (MemoryStream memoryStream = new MemoryStream((int)sizeDecompressed))
         {
-            using (ZlibStream stream2 = new ZlibStream(stream, CompressionMode.Compress, (CompressionLevel)compressionLevel))
+            using (ZlibStream zlibStream = new ZlibStream(memoryStream, CompressionMode.Compress, (CompressionLevel)compressionLevel))
             {
-                stream2.Write(buffer, 0, (int)sizeDecompressed);
+                zlibStream.Write(buffer, 0, (int)sizeDecompressed);
             }
-            buffer2 = stream.ToArray();
-            sizeCompressed = (uint)buffer2.Length;
-            return buffer2;
+
+            array = memoryStream.ToArray();
         }
+        sizeCompressed = (uint)array.Length;
+        return array;
     }
 }
 public static class EnumerableEx
 {
     public static IEnumerable<string> SplitBy(this string str, int chunkLength)
     {
-        if (String.IsNullOrEmpty(str)) throw new ArgumentException();
-        if (chunkLength < 1) throw new ArgumentException();
-
+        if (string.IsNullOrEmpty(str))
+        {
+            throw new ArgumentException();
+        }
+        if (chunkLength < 1)
+        {
+            throw new ArgumentException();
+        }
         for (int i = 0; i < str.Length; i += chunkLength)
         {
             if (chunkLength + i > str.Length)
+            {
                 chunkLength = str.Length - i;
-
+            }
             yield return str.Substring(i, chunkLength);
         }
     }

@@ -2,7 +2,6 @@
 using MaterialSkin;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -37,7 +36,7 @@ namespace BnSBuddy2.Pages
         {
             try
             {
-                File.WriteAllText(Form1.CurrentForm.AddonsPaths.ToString() + materialTextBox1.Text + ".xml", ((Control)fastColoredTextBox1).Text);
+                File.WriteAllText(Form1.CurrentForm.AddonsPaths.AddonsPath + "\\" + materialTextBox1.Text + ".xml", ((Control)fastColoredTextBox1).Text);
                 materialTextBox1.ReadOnly = false;
             }
             catch (Exception ex)

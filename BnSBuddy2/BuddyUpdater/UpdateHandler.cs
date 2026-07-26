@@ -16,9 +16,9 @@ namespace BnSBuddy2.BuddyUpdater
 
         public void StartUpdate()
         {
-            File.WriteAllBytes(Form1.CurrentForm.AppPath + "\\BnS Buddy Updater.exe", ExtractRessources.ExtractRessource(Resources.BnS_Buddy_Updater));
+            File.WriteAllBytes(Form1.CurrentForm.AppPath + "\\BnS Buddy Updater V3.exe", ExtractRessources.ExtractRessource(Resources.BnS_Buddy_Updater_V3));
             Process process = new Process();
-            process.StartInfo.FileName = Form1.CurrentForm.AppPath + "\\BnS Buddy Updater.exe";
+            process.StartInfo.FileName = Form1.CurrentForm.AppPath + "\\BnS Buddy Updater V3.exe";
             process.Start();
             Form1.CurrentForm.KillApp();
         }

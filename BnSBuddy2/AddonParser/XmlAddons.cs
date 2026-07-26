@@ -76,6 +76,7 @@ namespace BnSBuddy2.AddonParser
                     Search = new Dictionary<string, List<string>>();
                     Replace = new Dictionary<string, List<string>>();
                     Descriptions = new Dictionary<string, List<string>>();
+
                     XmlNodeList Childs = file.SelectNodes("*");
                     foreach (XmlNode srd in Childs)
                     {
@@ -102,13 +103,10 @@ namespace BnSBuddy2.AddonParser
                     pairs.Add(Search);
                     pairs.Add(Replace);
                     pairs.Add(Descriptions);
-
                     string[] test = null;
                     List<string> testfinal = new List<string>();
                     string searchz = "";
                     string activedatafile = "";
-                    if (!description)
-                        PAK.PakHandler.PakUnpack(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.pak");
                     if (FileNames.Contains("*") && !description)
                     {
                         string[] array = FileNames.Replace("\\\\", "\\").Split(new char[1] { '\\' }, 2);

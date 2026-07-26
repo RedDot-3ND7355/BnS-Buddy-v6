@@ -68,8 +68,6 @@ namespace BnSBuddy2.AddonParser
                         List<string> testfinal = new List<string>();
                         string searchz = "";
                         string activedatafile = "";
-                        if (!Description)
-                            PAK.PakHandler.PakUnpack(Form1.CurrentForm.PakPaths.PakPath + "Pak0-Local.pak");
                         if (FileNames.Contains("*") && !Description)
                         {
                             string[] array = FileNames.Replace("\\\\", "\\").Split(new char[1] { '\\' }, 2);
